@@ -135,6 +135,39 @@
             text-align: center;
             z-index: 10;
         }
+
+        #game-over-screen {
+            display: none; /* Скрыт по умолчанию */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 3em;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        #game-over-screen button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #FF0000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #game-over-screen button:hover {
+            background-color: #CC0000;
+        }
     </style>
 </head>
 <body>
@@ -155,18 +188,46 @@
         Используйте кнопки или клавиши W/A/S/D (или стрелки) для управления машинкой.
     </div>
 
+    <div id="game-over-screen">
+        <p>Игра окончена!</p>
+        <button onclick="restartGame()">Начать заново</button>
+    </div>
+
     <script>
         const car = document.getElementById('car');
         const gameContainer = document.getElementById('game-container');
+        const gameOverScreen = document.getElementById('game-over-screen');
+
         const carSpeed = 15;
-        const trafficSpeed = 3; // Скорость движения трафика
+        const trafficSpeed = 3;
         const trafficCars = [];
-        const maxTrafficCars = 4; // Увеличим количество машинок трафика
-        const trafficSpawnInterval = 1500; // Интервал появления новых машинок трафика (мс)
+        const maxTrafficCars = 4;
+        const trafficSpawnInterval = 1500;
 
         let lastTrafficSpawnTime = 0;
+        let gameRunning = true; // Флаг состояния игры
 
-        // Функция для генерации случайного яркого цвета
+        // Массив с URL изображений для машинок (замени на свои реальные изображения)
+        // Важно: изображения должны быть примерно одного размера и пропорций
+        const carImages = [
+            'https://i.imgur.com/example_player_car.png', // Замени на URL своей машинки игрока
+            'https://i.imgur.com/example_player_car2.png' // Если хочешь несколько вариантов для игрока
+        ];
+
+        const trafficCarImages = [
+            'https://i.imgur.com/example_traffic_car1.png', // Замени на URL машинки трафика 1
+            'https://i.imgur.com/example_traffic_car2.png', // Замени на URL машинки трафика 2
+            'https://i.imgur.com/example_traffic_car3.png', // Замени на URL машинки трафика 3
+            'https://i.imgur.com/example_traffic_car4.png'  // И так далее
+        ];
+
+        // Устанавливаем изображение для машинки игрока
+        car.style.backgroundImage = `url(${carImages[0]})`;
+        car.style.backgroundSize = 'contain';
+        car.style.backgroundRepeat = 'no-repeat';
+        car.style.backgroundColor = 'transparent'; // Убираем фоновый цвет, если есть изображение
+
+        // Функция для генерации случайного яркого цвета (если изображения не используются)
         function getRandomColor() {
             const letters = '0123456789ABCDEF';
             let color = '#';
@@ -177,6 +238,8 @@
         }
 
         function moveCar(direction) {
+            if (!gameRunning) return; // Не двигаем машинку, если игра окончена
+
             let currentLeft = parseInt(car.style.left || 50);
             let currentBottom = parseInt(car.style.bottom || 20);
             let newLeft = currentLeft;
@@ -206,11 +269,14 @@
             const trafficCar = document.createElement('div');
             trafficCar.classList.add('traffic-car');
             
-            // Случайный цвет
-            trafficCar.style.backgroundColor = getRandomColor();
+            // Выбираем случайное изображение для машинки трафика
+            const randomImage = trafficCarImages[Math.floor(Math.random() * trafficCarImages.length)];
+            trafficCar.style.backgroundImage = `url(${randomImage})`;
+            trafficCar.style.backgroundSize = 'contain';
+            trafficCar.style.backgroundRepeat = 'no-repeat';
+            trafficCar.style.backgroundColor = 'transparent'; // Убираем фоновый цвет
 
             // Случайная позиция по вертикали (в пределах дороги)
-            // Учитываем высоту машинки, чтобы она не выходила за границы
             const randomBottom = Math.random() * (gameContainer.offsetHeight - trafficCar.offsetHeight);
             trafficCar.style.bottom = randomBottom + 'px';
             
@@ -221,7 +287,55 @@
             trafficCars.push(trafficCar);
         }
 
+        function checkCollision() {
+            const carRect = car.getBoundingClientRect(); // Получаем размеры и позицию машинки игрока
+
+            for (let i = 0; i < trafficCars.length; i++) {
+                const trafficCar = trafficCars[i];
+                const trafficCarRect = trafficCar.getBoundingClientRect(); // Размеры и позиция машинки трафика
+
+                // Простая проверка столкновений (пересечение прямоугольников)
+                if (carRect.left < trafficCarRect.right &&
+                    carRect.right > trafficCarRect.left &&
+                    carRect.top < trafficCarRect.bottom &&
+                    carRect.bottom > trafficCarRect.top) {
+                    
+                    endGame(); // Если есть столкновение, завершаем игру
+                    return true; // Столкновение произошло
+                }
+            }
+            return false; // Столкновений нет
+        }
+
+        function endGame() {
+            gameRunning = false; // Останавливаем игру
+            gameOverScreen.style.display = 'flex'; // Показываем экран "Игра окончена"
+            // Можно добавить другие действия, например, остановить анимацию трафика
+        }
+
+        function restartGame() {
+            // Скрываем экран "Игра окончена"
+            gameOverScreen.style.display = 'none';
+
+            // Сбрасываем позицию машинки игрока
+            car.style.left = '50px';
+            car.style.bottom = '20px';
+
+            // Удаляем все машинки трафика
+            trafficCars.forEach(tc => gameContainer.removeChild(tc));
+            trafficCars.length = 0; // Очищаем массив
+
+            // Сбрасываем таймер появления трафика
+            lastTrafficSpawnTime = 0;
+
+            // Запускаем игру заново
+            gameRunning = true;
+            gameLoop(); // Перезапускаем игровой цикл
+        }
+
         function updateTraffic() {
+            if (!gameRunning) return; // Не обновляем трафик, если игра окончена
+
             const currentTime = Date.now();
 
             // Создаем новую машинку трафика, если пришло время и их не слишком много
@@ -248,21 +362,26 @@
 
         // Добавляем управление с клавиатуры
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-                moveCar('left');
-            } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
-                moveCar('right');
-            } else if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
-                moveCar('up');
-            } else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
-                moveCar('down');
+            if (gameRunning) { // Обрабатываем нажатия только если игра активна
+                if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
+                    moveCar('left');
+                } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+                    moveCar('right');
+                } else if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
+                    moveCar('up');
+                } else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
+                    moveCar('down');
+                }
             }
         });
 
         // Игровой цикл
         function gameLoop() {
+            if (!gameRunning) return; // Останавливаем цикл, если игра окончена
+
             updateTraffic();
-            requestAnimationFrame(gameLoop);
+            checkCollision(); // Проверяем столкновения на каждом кадре
+            requestAnimationFrame(gameLoop); // Запрашиваем следующий кадр анимации
         }
 
         // Запускаем игровой цикл
