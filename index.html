@@ -80,6 +80,18 @@
             z-index: 20;
         }
 
+        #base-health-display { /* Новый элемент для здоровья базы */
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 5px;
+            font-size: 1.2em;
+            z-index: 20;
+            color: #FFD700; /* Золотой цвет для здоровья */
+        }
+
         #game-over-screen {
             display: none;
             position: absolute;
@@ -174,6 +186,7 @@
         <div id="player"></div>
         
         <div id="score-display">Счет: 0</div>
+        <div id="base-health-display">База: 100</div> <!-- Новый элемент для отображения здоровья базы -->
     </div>
 
     <div id="game-over-screen">
@@ -194,6 +207,7 @@
     <audio id="shootSound" src="shoot.mp3" preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК ВЫСТРЕЛА -->
     <audio id="explosionSound" src="explosion.mp3" preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК ВЗРЫВА -->
     <audio id="gameOverSound" src="gameover.mp3" preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК КОНЦА ИГРЫ -->
+    <audio id="hitSound" src="hit.mp3" preload="auto"></audio> <!-- НОВЫЙ ЗВУК: попадание врага в базу -->
 
     <script>
         const player = document.getElementById('player');
@@ -202,10 +216,12 @@
         const startScreen = document.getElementById('start-screen');
         const scoreDisplay = document.getElementById('score-display');
         const finalScoreDisplay = document.getElementById('final-score');
+        const baseHealthDisplay = document.getElementById('base-health-display'); // Получаем новый элемент
 
         const shootSound = document.getElementById('shootSound');
         const explosionSound = document.getElementById('explosionSound');
         const gameOverSound = document.getElementById('gameOverSound');
+        const hitSound = document.getElementById('hitSound'); // Получаем новый звук
 
         const playerSpeed = 10; 
         const bulletSpeed = 10;
@@ -222,6 +238,9 @@
         let lastEnemySpawnTime = 0;
         let gameRunning = false;
         let score = 0;
+        let baseHealth = 100; // Начальное здоровье базы
+        const baseDamage = 10; // Урон базе от одного врага
+
         let animationFrameId;
 
         // --- ВАЖНО: ЗАМЕНИ ЭТИ URL НА СВОИ РЕАЛЬНЫЕ ИЗОБРАЖЕНИЯ! ---
@@ -239,7 +258,9 @@
             gameOverScreen.style.display = 'none';
             gameRunning = true;
             score = 0;
+            baseHealth = 100; // Сбрасываем здоровье базы при старте
             updateScoreDisplay();
+            updateBaseHealthDisplay(); // Обновляем отображение здоровья базы
             
             player.style.left = '50%';
             player.style.top = (gameContainer.offsetHeight - player.offsetHeight - 50) + 'px';
@@ -338,12 +359,9 @@
             enemy.classList.add('enemy');
             enemy.style.backgroundImage = `url(${enemyImageURL})`; 
             
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ: ГЕНЕРАЦИЯ randomLeft ---
-            // Гарантируем, что враг полностью помещается по горизонтали
             const maxLeft = gameContainer.offsetWidth - enemy.offsetWidth;
             const randomLeft = Math.random() * maxLeft; 
             enemy.style.left = randomLeft + 'px';
-            // ---------------------------------------------
             
             enemy.style.top = -enemy.offsetHeight + 'px';
             
@@ -364,12 +382,22 @@
                 let currentTop = parseInt(enemy.style.top);
                 let newTop = currentTop + enemySpeed; 
 
-                if (newTop > gameContainer.offsetHeight) { 
+                if (newTop > gameContainer.offsetHeight) { // Если враг достиг нижней части
                     gameContainer.removeChild(enemy);
                     enemies.splice(i, 1);
                     i--;
-                    endGame(); 
-                    return; 
+                    
+                    // --- НОВОЕ: Уменьшаем здоровье базы ---
+                    baseHealth -= baseDamage;
+                    updateBaseHealthDisplay();
+                    hitSound.currentTime = 0;
+                    hitSound.play().catch(e => console.log("Ошибка воспроизведения звука попадания:", e));
+
+                    if (baseHealth <= 0) {
+                        endGame(); // Игра окончена, если здоровье базы 0 или меньше
+                        return; // Выходим, так как игра закончилась
+                    }
+                    // -------------------------------------
                 } else {
                     enemy.style.top = newTop + 'px';
                 }
@@ -380,6 +408,10 @@
 
         function updateScoreDisplay() {
             scoreDisplay.textContent = `Счет: ${score}`;
+        }
+
+        function updateBaseHealthDisplay() { // Новая функция для обновления здоровья базы
+            baseHealthDisplay.textContent = `База: ${baseHealth}`;
         }
 
         // --- Обнаружение столкновений ---
