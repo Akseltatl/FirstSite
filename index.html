@@ -46,10 +46,10 @@
             to { transform: translateY(500px); } /* Уходим за нижний край */
         }
 
-        /* Позиции для дорожных линий */
-        #road-line-left { left: 30%; top: -50px; }
-        #road-line-center { left: 50%; top: -150px; }
-        #road-line-right { left: 70%; top: -250px; }
+        /* Позиции для дорожных линий (их top будет меняться анимацией) */
+        .road-line:nth-child(1) { left: 30%; animation-delay: 0s; }
+        .road-line:nth-child(2) { left: 50%; animation-delay: -0.5s; } /* Смещение для разных стартовых позиций */
+        .road-line:nth-child(3) { left: 70%; animation-delay: -1s; }
 
 
         #player-car {
@@ -57,29 +57,39 @@
             bottom: 50px; /* Позиция игрока */
             left: 50%;
             transform: translateX(-50%); /* Центрируем */
-            width: 100px; /* Ширина машинки игрока */
-            height: 50px; /* Высота машинки игрока */
-            border-radius: 5px;
+            
+            /* --- ВАЖНО: НАСТРОЙТЕ ЭТИ РАЗМЕРЫ ПОД ВАШЕ ИЗОБРАЖЕНИЕ МАШИНЫ ИГРОКА --- */
+            width: 120px; /* Пример: увеличена ширина для лучшей видимости */
+            height: 60px; /* Пример: увеличена высота для лучшей видимости */
+            /* ----------------------------------------------------------------- */
+
+            border-radius: 5px; /* Можно убрать, если изображение имеет свои углы */
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
-            transition: left 0.1s linear, bottom 0.1s linear;
+            transition: left 0.1s linear, top 0.1s linear; /* Изменено на top для вертикального движения */
             z-index: 2;
-            background-size: contain;
+            background-size: contain; /* Масштабирует изображение, чтобы оно поместилось */
             background-repeat: no-repeat;
-            background-position: center;
-            background-image: url('https://i.imgur.com/example_player_car.png'); /* ЗАМЕНИ НА СВОЕ ИЗОБРАЖЕНИЕ ПРЕСТУПНОЙ МАШИНЫ */
+            background-position: center; /* Центрирует изображение */
+            background-color: transparent; /* Убедитесь, что нет фонового цвета, если изображение имеет прозрачность */
+            /* background-image будет установлен через JavaScript */
         }
 
         .police-car {
             position: absolute;
-            width: 100px; /* Ширина полицейской машины */
-            height: 50px; /* Высота полицейской машины */
-            border-radius: 5px;
+            
+            /* --- ВАЖНО: НАСТРОЙТЕ ЭТИ РАЗМЕРЫ ПОД ВАШЕ ИЗОБРАЖЕНИЕ ПОЛИЦЕЙСКОЙ МАШИНЫ --- */
+            width: 120px; /* Пример: увеличена ширина для лучшей видимости */
+            height: 60px; /* Пример: увеличена высота для лучшей видимости */
+            /* ----------------------------------------------------------------------- */
+
+            border-radius: 5px; /* Можно убрать */
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
             z-index: 1;
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            background-image: url('https://i.imgur.com/example_police_car.png'); /* ЗАМЕНИ НА СВОЕ ИЗОБРАЖЕНИЕ ПОЛИЦЕЙСКОЙ МАШИНЫ */
+            background-color: transparent; /* Убедитесь, что нет фонового цвета */
+            /* background-image будет установлен через JavaScript */
         }
 
         /* UI элементы */
@@ -194,9 +204,9 @@
 
     <div id="game-container">
         <!-- Дорожные линии -->
-        <div class="road-line" style="left: 30%;"></div>
-        <div class="road-line" style="left: 50%;"></div>
-        <div class="road-line" style="left: 70%;"></div>
+        <div class="road-line"></div>
+        <div class="road-line"></div>
+        <div class="road-line"></div>
 
         <div id="player-car"></div>
         
@@ -250,12 +260,15 @@
         let currentHealth = maxHealth;
         let animationFrameId; // Для управления requestAnimationFrame
 
-        // --- Изображения (ЗАМЕНИ НА СВОИ РЕАЛЬНЫЕ URL) ---
-        const playerCarImage = 'https://i.imgur.com/example_player_car.png';
-        const policeCarImage = 'https://i.imgur.com/example_police_car.png';
+        // --- ВАЖНО: ЗАМЕНИ ЭТИ URL НА СВОИ РЕАЛЬНЫЕ ИЗОБРАЖЕНИЯ МАШИН! ---
+        // Убедись, что изображения существуют по этим ссылкам и доступны.
+        // Изображения должны быть с колесами и без прозрачности, если ты хочешь, чтобы они были "непрозрачными".
+        const playerCarImageURL = 'https://i.imgur.com/your_player_car.png'; // <-- ВСТАВЬ СЮДА СВОЙ URL
+        const policeCarImageURL = 'https://i.imgur.com/your_police_car.png'; // <-- ВСТАВЬ СЮДА СВОЙ URL
+        // -----------------------------------------------------------------
 
         // Устанавливаем изображение для машинки игрока
-        playerCar.style.backgroundImage = `url(${playerCarImage})`;
+        playerCar.style.backgroundImage = `url(${playerCarImageURL})`;
 
         // --- Функции управления игрой ---
 
@@ -270,16 +283,16 @@
             
             // Сбрасываем позицию игрока
             playerCar.style.left = '50%';
-            playerCar.style.bottom = '50px';
+            playerCar.style.top = (gameContainer.offsetHeight - playerCar.offsetHeight - 50) + 'px'; // Позиционируем сверху, чтобы bottom был 50px
 
             // Очищаем старых полицейских
             policeCars.forEach(pc => gameContainer.removeChild(pc));
             policeCars.length = 0;
             lastPoliceSpawnTime = 0;
 
-            // Запускаем звуки
-            engineSound.play();
-            sirenSound.play();
+            // Запускаем звуки (проверяем, что они загружены)
+            engineSound.play().catch(e => console.log("Ошибка воспроизведения звука двигателя:", e));
+            sirenSound.play().catch(e => console.log("Ошибка воспроизведения звука сирены:", e));
 
             gameLoop(); // Запускаем игровой цикл
         }
@@ -307,10 +320,10 @@
             if (!gameRunning) return;
 
             let currentLeft = playerCar.offsetLeft;
-            let currentBottom = playerCar.offsetTop; // Используем offsetTop для вертикального движения
+            let currentTop = playerCar.offsetTop; 
 
             let newLeft = currentLeft;
-            let newBottom = currentBottom;
+            let newTop = currentTop;
 
             // Получаем размеры контейнера и машины
             const gameContainerRect = gameContainer.getBoundingClientRect();
@@ -321,23 +334,23 @@
             } else if (direction === 'right') {
                 newLeft = currentLeft + playerSpeed;
             } else if (direction === 'up') {
-                newBottom = currentBottom - playerSpeed; // Вверх по экрану = уменьшение top
+                newTop = currentTop - playerSpeed; // Вверх по экрану = уменьшение top
             } else if (direction === 'down') {
-                newBottom = currentBottom + playerSpeed; // Вниз по экрану = увеличение top
+                newTop = currentTop + playerSpeed; // Вниз по экрану = увеличение top
             }
 
             // Ограничиваем движение игрока в пределах игрового поля
             newLeft = Math.max(0, Math.min(newLeft, gameContainerRect.width - playerCarRect.width));
-            newBottom = Math.max(0, Math.min(newBottom, gameContainerRect.height - playerCarRect.height));
+            newTop = Math.max(0, Math.min(newTop, gameContainerRect.height - playerCarRect.height));
 
             playerCar.style.left = newLeft + 'px';
-            playerCar.style.top = newBottom + 'px'; // Используем top для вертикального позиционирования
+            playerCar.style.top = newTop + 'px'; 
         }
 
         function createPoliceCar() {
             const policeCar = document.createElement('div');
             policeCar.classList.add('police-car');
-            policeCar.style.backgroundImage = `url(${policeCarImage})`;
+            policeCar.style.backgroundImage = `url(${policeCarImageURL})`; // Устанавливаем изображение
             
             // Случайная позиция по горизонтали (в пределах дороги)
             const randomLeft = Math.random() * (gameContainer.offsetWidth - policeCar.offsetWidth);
@@ -427,7 +440,7 @@
         function playCollisionSound() {
             if (collisionSound) {
                 collisionSound.currentTime = 0;
-                collisionSound.play();
+                collisionSound.play().catch(e => console.log("Ошибка воспроизведения звука столкновения:", e));
             }
         }
 
