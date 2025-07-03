@@ -1,24 +1,161 @@
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>BeamNG Drive</title>
-  </head>
-  <body style="background-color:#BDBDBD; font-family:Corbel; color:#ffffff;">
-    <header style=""></>
-    <main style=""></>
-    <footer></>
-    <h1 align="center"><span style="color:#000000;">BeamnNG</span>
-      <span style="color:#ff6600;">Drive</span></h1>
-    <p style="font-size:18px;">  <h1><span style="color:#ff0000;">ВНИМАНИЕ ВНИМАНИЕ!!! Продаётся BeamNG Drive БЕСПЛАТНО!!!(БЕЗ ВИРУСОВ)</span></h1>
-    </p>
-    <h1><a href="https://beamng-drive.kuvrgame.com/?yclid=6485569403118419967">Скачать бесплатно ТУТ(без торрента)</a></h1>
-    <h1><a href="https://thelastgame.ru/beamng-drive/">или тут(с торрентом)</a></h1>
-    <img src="https://avatars.mds.yandex.net/i?id=d751d346ff45d11d65a6e0c864dbbc26_l-5270141-images-thumbs&n=13" width="100%">
-    <img src="https://avatars.mds.yandex.net/i?id=4329a6539c25cd4e91e0b3409f9bc211_l-5258253-images-thumbs&n=13" width="100%">
-    <img src="https://avatars.mds.yandex.net/i?id=c55271c4442db67c4eb4223498a8c36b_l-4628623-images-thumbs&n=13" width="100%">
-    <img src="https://images.hdqwalls.com/download/beam-ng-drive-l7-1920x1080.jpg" width="100%">
-    <img src="https://avatars.mds.yandex.net/i?id=e83bd449ec9d00fce0eb26dd8cd0ab98_l-4576362-images-thumbs&n=13" width="100%">
-    <img src="https://www.beamng.com/data/avatars/l/134/134360.jpg?1498240650" width="100%">
-    <img src="https://www.beamng.com/data/avatars/l/131/131684.jpg?1449333177" width="100%">
-  </body>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра про Машинки</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* Скрываем полосы прокрутки */
+            background-color: #87CEEB; /* Небо */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Занимаем всю высоту экрана */
+            font-family: Arial, sans-serif;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px; /* Ширина игрового поля */
+            height: 400px; /* Высота игрового поля */
+            background-color: #555; /* Дорога */
+            border: 5px solid #333;
+            overflow: hidden; /* Важно для движения машинки */
+        }
+
+        #road-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background-color: #FFF; /* Белая разметка */
+            transform: translateY(-50%);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #car {
+            position: absolute;
+            bottom: 20px; /* Отступ от низа дороги */
+            left: 50px; /* Начальная позиция */
+            width: 80px;
+            height: 40px;
+            background-color: #FF0000; /* Красная машинка */
+            border-radius: 10px;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+            transition: left 0.1s linear; /* Плавное движение */
+        }
+
+        #car::before, #car::after {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: #333; /* Колеса */
+            border-radius: 50%;
+            top: 30px;
+        }
+
+        #car::before {
+            left: 10px;
+        }
+
+        #car::after {
+            right: 10px;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10; /* Чтобы кнопки были поверх всего */
+        }
+
+        .control-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .control-button:hover {
+            background-color: #45a049;
+        }
+
+        .control-button:active {
+            background-color: #3e8e41;
+        }
+
+        #instructions {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="road-line"></div>
+        <div id="car"></div>
+    </div>
+
+    <div id="controls">
+        <button class="control-button" onclick="moveCar('left')">Влево</button>
+        <button class="control-button" onclick="moveCar('right')">Вправо</button>
+    </div>
+
+    <div id="instructions">
+        Используйте кнопки "Влево" и "Вправо" или клавиши A/D (или стрелки) для управления машинкой.
+    </div>
+
+    <script>
+        const car = document.getElementById('car');
+        const gameContainer = document.getElementById('game-container');
+        const carSpeed = 10; // Скорость движения машинки
+
+        function moveCar(direction) {
+            let currentLeft = parseInt(car.style.left || 50); // Получаем текущую позицию или начальную
+            let newLeft;
+
+            if (direction === 'left') {
+                newLeft = currentLeft - carSpeed;
+            } else if (direction === 'right') {
+                newLeft = currentLeft + carSpeed;
+            }
+
+            // Ограничиваем движение машинки в пределах игрового поля
+            const maxLeft = gameContainer.offsetWidth - car.offsetWidth;
+            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+
+            car.style.left = newLeft + 'px';
+        }
+
+        // Добавляем управление с клавиатуры
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
+                moveCar('left');
+            } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+                moveCar('right');
+            }
+        });
+    </script>
+
+</body>
 </html>
