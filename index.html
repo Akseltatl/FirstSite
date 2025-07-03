@@ -2,19 +2,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Уход от погони: Игра за преступника</title>
+    <title>Космическая Стрелялка</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #507D2A; /* Темно-зеленый фон (трава/лес) */
+            background-color: #000; /* Черный космос */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: 'Press Start 2P', cursive; /* Пример ретро-шрифта */
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            font-family: 'Press Start 2P', cursive; /* Ретро-шрифт */
+            color: #00FF00; /* Ярко-зеленый текст */
+            text-shadow: 0 0 5px #00FF00;
         }
 
         /* Импорт шрифта (если используется) */
@@ -22,94 +22,62 @@
 
         #game-container {
             position: relative;
-            width: 900px; /* Шире для ощущения дороги */
-            height: 500px; /* Выше для ощущения дороги */
-            background-color: #333; /* Дорога */
-            border: 8px solid #222;
+            width: 600px; /* Ширина игрового поля */
+            height: 800px; /* Высота игрового поля */
+            background-color: #000; /* Черный фон космоса */
+            border: 5px solid #00FF00; /* Зеленая рамка */
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 20px #00FF00;
         }
 
-        /* Дорожная разметка - теперь будет двигаться для эффекта скорости */
-        .road-line {
+        #player {
             position: absolute;
-            width: 10px;
-            height: 50px; /* Длина штриха */
-            background-color: #FFF;
-            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-            animation: road-animation 2s linear infinite; /* Анимация движения */
-        }
-
-        /* Анимация для дорожной разметки */
-        @keyframes road-animation {
-            from { transform: translateY(-50px); } /* Начинаем выше экрана */
-            to { transform: translateY(500px); } /* Уходим за нижний край */
-        }
-
-        /* Позиции для дорожных линий (их top будет меняться анимацией) */
-        .road-line:nth-child(1) { left: 30%; animation-delay: 0s; }
-        .road-line:nth-child(2) { left: 50%; animation-delay: -0.5s; } /* Смещение для разных стартовых позиций */
-        .road-line:nth-child(3) { left: 70%; animation-delay: -1s; }
-
-
-        #player-car {
-            position: absolute;
-            bottom: 50px; /* Позиция игрока */
+            bottom: 50px;
             left: 50%;
-            transform: translateX(-50%); /* Центрируем */
-            
-            /* --- ВАЖНО: НАСТРОЙТЕ ЭТИ РАЗМЕРЫ ПОД ВАШЕ ИЗОБРАЖЕНИЕ МАШИНЫ ИГРОКА --- */
-            width: 120px; /* Пример: увеличена ширина для лучшей видимости */
-            height: 60px; /* Пример: увеличена высота для лучшей видимости */
-            /* ----------------------------------------------------------------- */
-
-            border-radius: 5px; /* Можно убрать, если изображение имеет свои углы */
-            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
-            transition: left 0.1s linear, top 0.1s linear; /* Изменено на top для вертикального движения */
-            z-index: 2;
-            background-size: contain; /* Масштабирует изображение, чтобы оно поместилось */
-            background-repeat: no-repeat;
-            background-position: center; /* Центрирует изображение */
-            background-color: transparent; /* Убедитесь, что нет фонового цвета, если изображение имеет прозрачность */
-            /* background-image будет установлен через JavaScript */
-        }
-
-        .police-car {
-            position: absolute;
-            
-            /* --- ВАЖНО: НАСТРОЙТЕ ЭТИ РАЗМЕРЫ ПОД ВАШЕ ИЗОБРАЖЕНИЕ ПОЛИЦЕЙСКОЙ МАШИНЫ --- */
-            width: 120px; /* Пример: увеличена ширина для лучшей видимости */
-            height: 60px; /* Пример: увеличена высота для лучшей видимости */
-            /* ----------------------------------------------------------------------- */
-
-            border-radius: 5px; /* Можно убрать */
-            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
-            z-index: 1;
+            transform: translateX(-50%);
+            width: 60px; /* Ширина корабля игрока */
+            height: 60px; /* Высота корабля игрока */
+            background-color: #00FFFF; /* Цвет корабля игрока (если нет изображения) */
+            border-radius: 5px;
+            z-index: 10;
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            background-color: transparent; /* Убедитесь, что нет фонового цвета */
+            /* background-image будет установлен через JavaScript */
+        }
+
+        .bullet {
+            position: absolute;
+            width: 5px;
+            height: 15px;
+            background-color: #FF0000; /* Красный снаряд */
+            border-radius: 2px;
+            z-index: 5;
+        }
+
+        .enemy {
+            position: absolute;
+            width: 50px; /* Ширина врага */
+            height: 50px; /* Высота врага */
+            background-color: #FF00FF; /* Цвет врага (если нет изображения) */
+            border-radius: 5px;
+            z-index: 8;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             /* background-image будет установлен через JavaScript */
         }
 
         /* UI элементы */
-        #score-display, #health-display {
+        #score-display {
             position: absolute;
             top: 10px;
+            left: 10px;
             padding: 5px 10px;
             background-color: rgba(0, 0, 0, 0.6);
             border-radius: 5px;
             font-size: 1.2em;
-            z-index: 10;
-        }
-
-        #score-display {
-            left: 10px;
-        }
-
-        #health-display {
-            right: 10px;
-            color: #FFD700; /* Золотой цвет для здоровья */
+            z-index: 20;
         }
 
         #game-over-screen {
@@ -120,7 +88,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.9);
-            color: white;
+            color: #FF0000; /* Красный текст */
             font-size: 2.5em;
             display: flex;
             flex-direction: column;
@@ -139,8 +107,8 @@
             padding: 15px 30px;
             font-size: 1.2em;
             cursor: pointer;
-            background-color: #FF4500; /* Оранжево-красный */
-            color: white;
+            background-color: #00FF00; /* Зеленая кнопка */
+            color: black;
             border: none;
             border-radius: 5px;
             transition: background-color 0.3s ease;
@@ -148,7 +116,7 @@
         }
 
         #game-over-screen button:hover {
-            background-color: #CC3700;
+            background-color: #00CC00;
         }
 
         #start-screen {
@@ -158,13 +126,13 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.9);
-            color: white;
+            color: #00FF00;
             font-size: 2.5em;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 101; /* Выше, чем game-over-screen */
+            z-index: 101;
             text-align: center;
         }
 
@@ -173,8 +141,8 @@
             padding: 15px 30px;
             font-size: 1.2em;
             cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
+            background-color: #00FF00;
+            color: black;
             border: none;
             border-radius: 5px;
             transition: background-color 0.3s ease;
@@ -182,7 +150,7 @@
         }
 
         #start-screen button:hover {
-            background-color: #45a049;
+            background-color: #00CC00;
         }
 
         #instructions {
@@ -191,84 +159,77 @@
             left: 50%;
             transform: translateX(-50%);
             background-color: rgba(0, 0, 0, 0.7);
-            color: white;
+            color: #00FF00;
             padding: 5px 10px;
             border-radius: 5px;
             font-size: 0.9em;
             text-align: center;
-            z-index: 10;
+            z-index: 20;
         }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <!-- Дорожные линии -->
-        <div class="road-line"></div>
-        <div class="road-line"></div>
-        <div class="road-line"></div>
-
-        <div id="player-car"></div>
+        <div id="player"></div>
         
-        <div id="score-display">Очки: 0</div>
-        <div id="health-display">Урон: 0%</div>
+        <div id="score-display">Счет: 0</div>
     </div>
 
     <div id="game-over-screen">
-        <p>ПОЙМАН!</p>
-        <p>Набрано очков: <span id="final-score">0</span></p>
+        <p>ИГРА ОКОНЧЕНА!</p>
+        <p>Ваш счет: <span id="final-score">0</span></p>
         <button onclick="restartGame()">Начать заново</button>
     </div>
 
     <div id="start-screen">
-        <h1>Уход от погони</h1>
-        <p>Управляй машиной, уходи от полиции!</p>
-        <p>Клавиши: W/A/S/D или Стрелки</p>
+        <h1>Космическая Стрелялка</h1>
+        <p>Уничтожай врагов!</p>
+        <p>Движение: Стрелки или A/D</p>
+        <p>Стрельба: Пробел</p>
         <button onclick="startGame()">Начать игру</button>
     </div>
 
     <!-- Аудио элементы -->
-    <audio id="collisionSound" src="collision.mp3" preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК СТОЛКНОВЕНИЯ -->
-    <audio id="engineSound" src="engine.mp3" loop preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК ДВИГАТЕЛЯ -->
-    <audio id="sirenSound" src="siren.mp3" loop preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК СИРЕНЫ -->
+    <audio id="shootSound" src="shoot.mp3" preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК ВЫСТРЕЛА -->
+    <audio id="explosionSound" src="explosion.mp3" preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК ВЗРЫВА -->
+    <audio id="gameOverSound" src="gameover.mp3" preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК КОНЦА ИГРЫ -->
 
     <script>
-        const playerCar = document.getElementById('player-car');
+        const player = document.getElementById('player');
         const gameContainer = document.getElementById('game-container');
         const gameOverScreen = document.getElementById('game-over-screen');
         const startScreen = document.getElementById('start-screen');
         const scoreDisplay = document.getElementById('score-display');
-        const healthDisplay = document.getElementById('health-display');
         const finalScoreDisplay = document.getElementById('final-score');
 
-        const collisionSound = document.getElementById('collisionSound');
-        const engineSound = document.getElementById('engineSound');
-        const sirenSound = document.getElementById('sirenSound');
+        const shootSound = document.getElementById('shootSound');
+        const explosionSound = document.getElementById('explosionSound');
+        const gameOverSound = document.getElementById('gameOverSound');
 
-        const playerSpeed = 8; // Скорость игрока
-        const policeSpeed = 4; // Базовая скорость полиции
-        const policeCars = []; // Массив для хранения полицейских машин
-        const maxPoliceCars = 3; // Максимальное количество полицейских на экране
-        const policeSpawnInterval = 2000; // Интервал появления новых полицейских (мс)
+        const playerSpeed = 7;
+        const bulletSpeed = 10;
+        const enemySpeed = 2;
+        const fireRate = 200; // Миллисекунды между выстрелами
 
-        const maxHealth = 100; // Максимальное "здоровье" игрока
-        const collisionDamage = 25; // Урон от одного столкновения
+        const bullets = [];
+        const enemies = [];
+        const maxEnemies = 5;
+        const enemySpawnInterval = 1500; // Интервал появления врагов
 
-        let lastPoliceSpawnTime = 0;
-        let gameRunning = false; // Флаг состояния игры
+        let lastShotTime = 0;
+        let lastEnemySpawnTime = 0;
+        let gameRunning = false;
         let score = 0;
-        let currentHealth = maxHealth;
-        let animationFrameId; // Для управления requestAnimationFrame
+        let animationFrameId;
 
-        // --- ВАЖНО: ЗАМЕНИ ЭТИ URL НА СВОИ РЕАЛЬНЫЕ ИЗОБРАЖЕНИЯ МАШИН! ---
-        // Убедись, что изображения существуют по этим ссылкам и доступны.
-        // Изображения должны быть с колесами и без прозрачности, если ты хочешь, чтобы они были "непрозрачными".
-        const playerCarImageURL = 'https://i.imgur.com/your_player_car.png'; // <-- ВСТАВЬ СЮДА СВОЙ URL
-        const policeCarImageURL = 'https://i.imgur.com/your_police_car.png'; // <-- ВСТАВЬ СЮДА СВОЙ URL
-        // -----------------------------------------------------------------
+        // --- ВАЖНО: ЗАМЕНИ ЭТИ URL НА СВОИ РЕАЛЬНЫЕ ИЗОБРАЖЕНИЯ! ---
+        const playerImageURL = 'https://i.imgur.com/your_player_ship.png'; // <-- ВСТАВЬ СЮДА СВОЙ URL
+        const enemyImageURL = 'https://i.imgur.com/your_enemy_ship.png';   // <-- ВСТАВЬ СЮДА СВОЙ URL
+        // ----------------------------------------------------------
 
-        // Устанавливаем изображение для машинки игрока
-        playerCar.style.backgroundImage = `url(${playerCarImageURL})`;
+        // Устанавливаем изображение для игрока
+        player.style.backgroundImage = `url(${playerImageURL})`;
 
         // --- Функции управления игрой ---
 
@@ -277,117 +238,133 @@
             gameOverScreen.style.display = 'none';
             gameRunning = true;
             score = 0;
-            currentHealth = maxHealth;
             updateScoreDisplay();
-            updateHealthDisplay();
             
             // Сбрасываем позицию игрока
-            playerCar.style.left = '50%';
-            playerCar.style.top = (gameContainer.offsetHeight - playerCar.offsetHeight - 50) + 'px'; // Позиционируем сверху, чтобы bottom был 50px
+            player.style.left = '50%';
+            player.style.bottom = '50px';
 
-            // Очищаем старых полицейских
-            policeCars.forEach(pc => gameContainer.removeChild(pc));
-            policeCars.length = 0;
-            lastPoliceSpawnTime = 0;
+            // Очищаем старые снаряды и врагов
+            bullets.forEach(b => gameContainer.removeChild(b));
+            bullets.length = 0;
+            enemies.forEach(e => gameContainer.removeChild(e));
+            enemies.length = 0;
 
-            // Запускаем звуки (проверяем, что они загружены)
-            engineSound.play().catch(e => console.log("Ошибка воспроизведения звука двигателя:", e));
-            sirenSound.play().catch(e => console.log("Ошибка воспроизведения звука сирены:", e));
+            lastShotTime = 0;
+            lastEnemySpawnTime = 0;
 
             gameLoop(); // Запускаем игровой цикл
         }
 
         function endGame() {
             gameRunning = false;
-            cancelAnimationFrame(animationFrameId); // Останавливаем игровой цикл
+            cancelAnimationFrame(animationFrameId);
             gameOverScreen.style.display = 'flex';
             finalScoreDisplay.textContent = score;
-
-            // Останавливаем звуки
-            engineSound.pause();
-            sirenSound.pause();
-            engineSound.currentTime = 0;
-            sirenSound.currentTime = 0;
+            gameOverSound.play().catch(e => console.log("Ошибка воспроизведения звука конца игры:", e));
         }
 
         function restartGame() {
-            startGame(); // Просто перезапускаем игру
+            startGame();
         }
 
         // --- Функции движения и создания объектов ---
 
-        function movePlayerCar(direction) {
+        function movePlayer(direction) {
             if (!gameRunning) return;
 
-            let currentLeft = playerCar.offsetLeft;
-            let currentTop = playerCar.offsetTop; 
-
+            let currentLeft = player.offsetLeft;
             let newLeft = currentLeft;
-            let newTop = currentTop;
 
-            // Получаем размеры контейнера и машины
-            const gameContainerRect = gameContainer.getBoundingClientRect();
-            const playerCarRect = playerCar.getBoundingClientRect();
+            const gameContainerWidth = gameContainer.offsetWidth;
+            const playerWidth = player.offsetWidth;
 
             if (direction === 'left') {
                 newLeft = currentLeft - playerSpeed;
             } else if (direction === 'right') {
                 newLeft = currentLeft + playerSpeed;
-            } else if (direction === 'up') {
-                newTop = currentTop - playerSpeed; // Вверх по экрану = уменьшение top
-            } else if (direction === 'down') {
-                newTop = currentTop + playerSpeed; // Вниз по экрану = увеличение top
             }
 
-            // Ограничиваем движение игрока в пределах игрового поля
-            newLeft = Math.max(0, Math.min(newLeft, gameContainerRect.width - playerCarRect.width));
-            newTop = Math.max(0, Math.min(newTop, gameContainerRect.height - playerCarRect.height));
-
-            playerCar.style.left = newLeft + 'px';
-            playerCar.style.top = newTop + 'px'; 
+            // Ограничиваем движение игрока по горизонтали
+            newLeft = Math.max(0, Math.min(newLeft, gameContainerWidth - playerWidth));
+            player.style.left = newLeft + 'px';
         }
 
-        function createPoliceCar() {
-            const policeCar = document.createElement('div');
-            policeCar.classList.add('police-car');
-            policeCar.style.backgroundImage = `url(${policeCarImageURL})`; // Устанавливаем изображение
+        function createBullet() {
+            const currentTime = Date.now();
+            if (currentTime - lastShotTime < fireRate) {
+                return; // Слишком быстро
+            }
+            lastShotTime = currentTime;
+
+            const bullet = document.createElement('div');
+            bullet.classList.add('bullet');
             
-            // Случайная позиция по горизонтали (в пределах дороги)
-            const randomLeft = Math.random() * (gameContainer.offsetWidth - policeCar.offsetWidth);
-            policeCar.style.left = randomLeft + 'px';
+            // Позиция снаряда: по центру игрока, чуть выше
+            bullet.style.left = (player.offsetLeft + player.offsetWidth / 2 - bullet.offsetWidth / 2) + 'px';
+            bullet.style.top = (player.offsetTop - bullet.offsetHeight) + 'px';
+            
+            gameContainer.appendChild(bullet);
+            bullets.push(bullet);
+            shootSound.currentTime = 0; // Сброс звука для быстрого повтора
+            shootSound.play().catch(e => console.log("Ошибка воспроизведения звука выстрела:", e));
+        }
+
+        function updateBullets() {
+            for (let i = 0; i < bullets.length; i++) {
+                const bullet = bullets[i];
+                let currentTop = parseInt(bullet.style.top);
+                let newTop = currentTop - bulletSpeed; // Движение вверх
+
+                if (newTop + bullet.offsetHeight < 0) { // Если снаряд ушел за верхний край
+                    gameContainer.removeChild(bullet);
+                    bullets.splice(i, 1);
+                    i--;
+                } else {
+                    bullet.style.top = newTop + 'px';
+                }
+            }
+        }
+
+        function createEnemy() {
+            const enemy = document.createElement('div');
+            enemy.classList.add('enemy');
+            enemy.style.backgroundImage = `url(${enemyImageURL})`; // Устанавливаем изображение
+            
+            // Случайная позиция по горизонтали
+            const randomLeft = Math.random() * (gameContainer.offsetWidth - enemy.offsetWidth);
+            enemy.style.left = randomLeft + 'px';
             
             // Появляется сверху
-            policeCar.style.top = -policeCar.offsetHeight + 'px'; // Появляется чуть выше верхнего края
+            enemy.style.top = -enemy.offsetHeight + 'px';
             
-            gameContainer.appendChild(policeCar);
-            policeCars.push(policeCar);
+            gameContainer.appendChild(enemy);
+            enemies.push(enemy);
         }
 
-        function updatePoliceCars() {
-            if (!gameRunning) return;
-
+        function updateEnemies() {
             const currentTime = Date.now();
 
-            // Создаем новую полицейскую машину, если пришло время и их не слишком много
-            if (policeCars.length < maxPoliceCars && currentTime - lastPoliceSpawnTime > policeSpawnInterval) {
-                createPoliceCar();
-                lastPoliceSpawnTime = currentTime;
+            // Создаем нового врага
+            if (enemies.length < maxEnemies && currentTime - lastEnemySpawnTime > enemySpawnInterval) {
+                createEnemy();
+                lastEnemySpawnTime = currentTime;
             }
 
-            // Перемещаем и удаляем полицейские машины
-            for (let i = 0; i < policeCars.length; i++) {
-                const policeCar = policeCars[i];
-                let currentTop = parseInt(policeCar.style.top);
-                let newTop = currentTop + policeSpeed; // Движение вниз
+            // Перемещаем и удаляем врагов
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i];
+                let currentTop = parseInt(enemy.style.top);
+                let newTop = currentTop + enemySpeed; // Движение вниз
 
-                if (newTop > gameContainer.offsetHeight) { // Если машина ушла за нижний край
-                    gameContainer.removeChild(policeCar);
-                    policeCars.splice(i, 1); // Удаляем из массива
-                    i--; // Корректируем индекс после удаления
-                    score += 10; // Начисляем очки за уход от машины
-                    updateScoreDisplay();
+                if (newTop > gameContainer.offsetHeight) { // Если враг достиг нижней части
+                    gameContainer.removeChild(enemy);
+                    enemies.splice(i, 1);
+                    i--;
+                    endGame(); // Игра окончена, если враг прошел
+                    return; // Выходим, так как игра закончилась
                 } else {
-                    policeCar.style.top = newTop + 'px';
+                    enemy.style.top = newTop + 'px';
                 }
             }
         }
@@ -395,52 +372,63 @@
         // --- Обновление UI ---
 
         function updateScoreDisplay() {
-            scoreDisplay.textContent = `Очки: ${score}`;
-        }
-
-        function updateHealthDisplay() {
-            healthDisplay.textContent = `Урон: ${Math.max(0, maxHealth - currentHealth)}%`;
-            if (currentHealth <= 0) {
-                endGame();
-            }
+            scoreDisplay.textContent = `Счет: ${score}`;
         }
 
         // --- Обнаружение столкновений ---
 
         function checkCollisions() {
-            const playerRect = playerCar.getBoundingClientRect();
+            const playerRect = player.getBoundingClientRect();
 
-            for (let i = 0; i < policeCars.length; i++) {
-                const policeCar = policeCars[i];
-                const policeRect = policeCar.getBoundingClientRect();
+            // Проверка столкновений снарядов с врагами
+            for (let i = 0; i < bullets.length; i++) {
+                const bullet = bullets[i];
+                const bulletRect = bullet.getBoundingClientRect();
 
-                // Проверка пересечения прямоугольников
-                if (playerRect.left < policeRect.right &&
-                    playerRect.right > policeRect.left &&
-                    playerRect.top < policeRect.bottom &&
-                    playerRect.bottom > policeRect.top) {
-                    
-                    // Столкновение!
-                    playCollisionSound();
-                    currentHealth -= collisionDamage;
-                    updateHealthDisplay();
+                for (let j = 0; j < enemies.length; j++) {
+                    const enemy = enemies[j];
+                    const enemyRect = enemy.getBoundingClientRect();
 
-                    // Удаляем столкнувшуюся полицейскую машину
-                    gameContainer.removeChild(policeCar);
-                    policeCars.splice(i, 1);
-                    i--; // Корректируем индекс
+                    if (bulletRect.left < enemyRect.right &&
+                        bulletRect.right > enemyRect.left &&
+                        bulletRect.top < enemyRect.bottom &&
+                        bulletRect.bottom > enemyRect.top) {
+                        
+                        // Столкновение снаряда с врагом!
+                        explosionSound.currentTime = 0;
+                        explosionSound.play().catch(e => console.log("Ошибка воспроизведения звука взрыва:", e));
 
-                    if (currentHealth <= 0) {
-                        endGame();
+                        gameContainer.removeChild(bullet);
+                        bullets.splice(i, 1);
+                        i--; // Корректируем индекс
+
+                        gameContainer.removeChild(enemy);
+                        enemies.splice(j, 1);
+                        j--; // Корректируем индекс
+
+                        score += 100; // Очки за уничтожение врага
+                        updateScoreDisplay();
+                        break; // Выходим из внутреннего цикла, так как снаряд уже попал
                     }
                 }
             }
-        }
 
-        function playCollisionSound() {
-            if (collisionSound) {
-                collisionSound.currentTime = 0;
-                collisionSound.play().catch(e => console.log("Ошибка воспроизведения звука столкновения:", e));
+            // Проверка столкновений игрока с врагами
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i];
+                const enemyRect = enemy.getBoundingClientRect();
+
+                if (playerRect.left < enemyRect.right &&
+                    playerRect.right > enemyRect.left &&
+                    playerRect.top < enemyRect.bottom &&
+                    playerRect.bottom > enemyRect.top) {
+                    
+                    // Столкновение игрока с врагом!
+                    explosionSound.currentTime = 0;
+                    explosionSound.play().catch(e => console.log("Ошибка воспроизведения звука взрыва:", e));
+                    endGame(); // Игра окончена
+                    return; // Выходим, так как игра закончилась
+                }
             }
         }
 
@@ -450,13 +438,11 @@
             if (!gameRunning) return;
 
             if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-                movePlayerCar('left');
+                movePlayer('left');
             } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
-                movePlayerCar('right');
-            } else if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
-                movePlayerCar('up');
-            } else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
-                movePlayerCar('down');
+                movePlayer('right');
+            } else if (event.key === ' ' || event.key === 'Spacebar') { // Пробел для стрельбы
+                createBullet();
             }
         });
 
@@ -465,7 +451,8 @@
         function gameLoop() {
             if (!gameRunning) return;
 
-            updatePoliceCars();
+            updateBullets();
+            updateEnemies();
             checkCollisions();
             
             animationFrameId = requestAnimationFrame(gameLoop);
