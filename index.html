@@ -32,7 +32,7 @@
 
         #player {
             position: absolute;
-            bottom: 50px;
+            bottom: 50px; /* Начальная позиция снизу */
             left: 50%;
             transform: translateX(-50%);
             width: 60px; /* Ширина корабля игрока */
@@ -185,7 +185,7 @@
     <div id="start-screen">
         <h1>Космическая Стрелялка</h1>
         <p>Уничтожай врагов!</p>
-        <p>Движение: Стрелки или A/D</p>
+        <p>Движение: Стрелки или W/A/S/D</p>
         <p>Стрельба: Пробел</p>
         <button onclick="startGame()">Начать игру</button>
     </div>
@@ -207,15 +207,18 @@
         const explosionSound = document.getElementById('explosionSound');
         const gameOverSound = document.getElementById('gameOverSound');
 
-        const playerSpeed = 7;
+        // --- ИЗМЕНЕННЫЕ ПАРАМЕТРЫ СКОРОСТИ ---
+        const playerSpeed = 10; // Игрок быстрее
         const bulletSpeed = 10;
-        const enemySpeed = 2;
+        const enemySpeed = 1;   // Враги медленнее
+        // ------------------------------------
+
         const fireRate = 200; // Миллисекунды между выстрелами
 
         const bullets = [];
         const enemies = [];
         const maxEnemies = 5;
-        const enemySpawnInterval = 1500; // Интервал появления врагов
+        const enemySpawnInterval = 2000; // Интервал появления врагов (увеличил, чтобы было проще)
 
         let lastShotTime = 0;
         let lastEnemySpawnTime = 0;
@@ -242,7 +245,8 @@
             
             // Сбрасываем позицию игрока
             player.style.left = '50%';
-            player.style.bottom = '50px';
+            // Устанавливаем начальную позицию игрока по вертикали (например, 50px от низа)
+            player.style.top = (gameContainer.offsetHeight - player.offsetHeight - 50) + 'px';
 
             // Очищаем старые снаряды и врагов
             bullets.forEach(b => gameContainer.removeChild(b));
@@ -274,20 +278,30 @@
             if (!gameRunning) return;
 
             let currentLeft = player.offsetLeft;
-            let newLeft = currentLeft;
+            let currentTop = player.offsetTop; // Получаем текущую позицию по вертикали
 
-            const gameContainerWidth = gameContainer.offsetWidth;
-            const playerWidth = player.offsetWidth;
+            let newLeft = currentLeft;
+            let newTop = currentTop;
+
+            const gameContainerRect = gameContainer.getBoundingClientRect();
+            const playerRect = player.getBoundingClientRect();
 
             if (direction === 'left') {
                 newLeft = currentLeft - playerSpeed;
             } else if (direction === 'right') {
                 newLeft = currentLeft + playerSpeed;
+            } else if (direction === 'up') { // Движение вверх
+                newTop = currentTop - playerSpeed;
+            } else if (direction === 'down') { // Движение вниз
+                newTop = currentTop + playerSpeed;
             }
 
-            // Ограничиваем движение игрока по горизонтали
-            newLeft = Math.max(0, Math.min(newLeft, gameContainerWidth - playerWidth));
+            // Ограничиваем движение игрока в пределах игрового поля
+            newLeft = Math.max(0, Math.min(newLeft, gameContainerRect.width - playerRect.width));
+            newTop = Math.max(0, Math.min(newTop, gameContainerRect.height - playerRect.height));
+
             player.style.left = newLeft + 'px';
+            player.style.top = newTop + 'px'; // Устанавливаем новую позицию по вертикали
         }
 
         function createBullet() {
@@ -441,6 +455,10 @@
                 movePlayer('left');
             } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
                 movePlayer('right');
+            } else if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') { // Движение вверх
+                movePlayer('up');
+            } else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') { // Движение вниз
+                movePlayer('down');
             } else if (event.key === ' ' || event.key === 'Spacebar') { // Пробел для стрельбы
                 createBullet();
             }
