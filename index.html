@@ -2,16 +2,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра про Машинки</title>
+    <title>Игра про Машинки (Горизонтальный Трафик)</title>
     <style>
         body {
             margin: 0;
-            overflow: hidden; /* Скрываем полосы прокрутки */
+            overflow: hidden;
             background-color: #87CEEB; /* Небо */
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Занимаем всю высоту экрана */
+            min-height: 100vh;
             font-family: Arial, sans-serif;
         }
 
@@ -21,7 +21,7 @@
             height: 400px; /* Высота игрового поля */
             background-color: #555; /* Дорога */
             border: 5px solid #333;
-            overflow: hidden; /* Важно для движения машинки и трафика */
+            overflow: hidden;
         }
 
         #road-line {
@@ -37,15 +37,15 @@
 
         #car {
             position: absolute;
-            bottom: 20px; /* Отступ от низа дороги */
-            left: 50px; /* Начальная позиция */
+            bottom: 20px;
+            left: 50px;
             width: 80px;
             height: 40px;
-            background-color: #FF0000; /* Красная машинка */
+            background-color: #FF0000; /* Красная машинка игрока */
             border-radius: 10px;
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
-            transition: left 0.1s linear, bottom 0.1s linear; /* Плавное движение */
-            z-index: 2; /* Машинка поверх трафика */
+            transition: left 0.1s linear, bottom 0.1s linear;
+            z-index: 2;
         }
 
         #car::before, #car::after {
@@ -70,10 +70,9 @@
             position: absolute;
             width: 80px;
             height: 40px;
-            background-color: #00F; /* Синяя машинка трафика */
             border-radius: 10px;
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
-            z-index: 1; /* Трафик под машинкой игрока */
+            z-index: 1;
         }
 
         .traffic-car::before, .traffic-car::after {
@@ -101,7 +100,7 @@
             transform: translateX(-50%);
             display: flex;
             gap: 10px;
-            z-index: 10; /* Чтобы кнопки были поверх всего */
+            z-index: 10;
         }
 
         .control-button {
@@ -159,13 +158,23 @@
     <script>
         const car = document.getElementById('car');
         const gameContainer = document.getElementById('game-container');
-        const carSpeed = 15; // Скорость движения машинки
+        const carSpeed = 15;
         const trafficSpeed = 3; // Скорость движения трафика
-        const trafficCars = []; // Массив для хранения машинок трафика
-        const maxTrafficCars = 3; // Максимальное количество машинок трафика на экране
-        const trafficSpawnInterval = 2000; // Интервал появления новых машинок трафика (мс)
+        const trafficCars = [];
+        const maxTrafficCars = 4; // Увеличим количество машинок трафика
+        const trafficSpawnInterval = 1500; // Интервал появления новых машинок трафика (мс)
 
         let lastTrafficSpawnTime = 0;
+
+        // Функция для генерации случайного яркого цвета
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
 
         function moveCar(direction) {
             let currentLeft = parseInt(car.style.left || 50);
@@ -183,7 +192,6 @@
                 newBottom = currentBottom - carSpeed;
             }
 
-            // Ограничиваем движение машинки в пределах игрового поля
             const maxLeft = gameContainer.offsetWidth - car.offsetWidth;
             const maxBottom = gameContainer.offsetHeight - car.offsetHeight;
 
@@ -198,12 +206,16 @@
             const trafficCar = document.createElement('div');
             trafficCar.classList.add('traffic-car');
             
-            // Случайная позиция по горизонтали
-            const randomLeft = Math.random() * (gameContainer.offsetWidth - trafficCar.offsetWidth);
-            trafficCar.style.left = randomLeft + 'px';
+            // Случайный цвет
+            trafficCar.style.backgroundColor = getRandomColor();
+
+            // Случайная позиция по вертикали (в пределах дороги)
+            // Учитываем высоту машинки, чтобы она не выходила за границы
+            const randomBottom = Math.random() * (gameContainer.offsetHeight - trafficCar.offsetHeight);
+            trafficCar.style.bottom = randomBottom + 'px';
             
-            // Появляется сверху
-            trafficCar.style.bottom = gameContainer.offsetHeight + 'px'; 
+            // Появляется справа
+            trafficCar.style.left = gameContainer.offsetWidth + 'px'; 
             
             gameContainer.appendChild(trafficCar);
             trafficCars.push(trafficCar);
@@ -221,15 +233,15 @@
             // Перемещаем и удаляем машинки трафика
             for (let i = 0; i < trafficCars.length; i++) {
                 const trafficCar = trafficCars[i];
-                let currentBottom = parseInt(trafficCar.style.bottom);
-                let newBottom = currentBottom - trafficSpeed;
+                let currentLeft = parseInt(trafficCar.style.left);
+                let newLeft = currentLeft - trafficSpeed; // Движение влево
 
-                if (newBottom + trafficCar.offsetHeight < 0) { // Если машинка ушла за нижний край
+                if (newLeft + trafficCar.offsetWidth < 0) { // Если машинка ушла за левый край
                     gameContainer.removeChild(trafficCar);
                     trafficCars.splice(i, 1); // Удаляем из массива
                     i--; // Корректируем индекс после удаления
                 } else {
-                    trafficCar.style.bottom = newBottom + 'px';
+                    trafficCar.style.left = newLeft + 'px';
                 }
             }
         }
@@ -250,7 +262,7 @@
         // Игровой цикл
         function gameLoop() {
             updateTraffic();
-            requestAnimationFrame(gameLoop); // Запрашиваем следующий кадр анимации
+            requestAnimationFrame(gameLoop);
         }
 
         // Запускаем игровой цикл
