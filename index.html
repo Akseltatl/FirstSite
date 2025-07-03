@@ -39,69 +39,39 @@
             position: absolute;
             bottom: 20px;
             left: 50px;
-            width: 80px; /* Ширина машинки игрока */
-            height: 40px; /* Высота машинки игрока */
+            /* Установите эти размеры в соответствии с пропорциями вашего изображения машинки */
+            width: 100px; /* Пример: увеличена ширина */
+            height: 50px; /* Пример: увеличена высота */
+            
             /* background-color: #FF0000; */ /* Убираем фоновый цвет, используем изображение */
-            border-radius: 10px;
+            border-radius: 5px; /* Можно уменьшить или убрать, если изображение имеет свои углы */
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
             transition: left 0.1s linear, bottom 0.1s linear;
             z-index: 2;
+            
             /* Стили для изображения */
             background-size: contain; /* Масштабирует изображение, чтобы оно поместилось */
             background-repeat: no-repeat;
             background-position: center; /* Центрирует изображение */
+            /* Убедитесь, что изображение не имеет прозрачности, если вы хотите, чтобы оно было "не прозрачным" */
         }
-
-        /* Убираем псевдоэлементы для колес, если используем реальные изображения */
-        /* #car::before, #car::after {
-            content: '';
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            background-color: #333;
-            border-radius: 50%;
-            top: 30px;
-        }
-
-        #car::before {
-            left: 10px;
-        }
-
-        #car::after {
-            right: 10px;
-        } */
 
         .traffic-car {
             position: absolute;
-            width: 80px; /* Ширина машинки трафика */
-            height: 40px; /* Высота машинки трафика */
-            border-radius: 10px;
+            /* Установите эти размеры в соответствии с пропорциями ваших изображений машинок трафика */
+            width: 100px; /* Пример: увеличена ширина */
+            height: 50px; /* Пример: увеличена высота */
+            
+            border-radius: 5px; /* Можно уменьшить или убрать */
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
             z-index: 1;
+            
             /* Стили для изображения */
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
+            /* Убедитесь, что изображение не имеет прозрачности, если вы хотите, чтобы оно было "не прозрачным" */
         }
-
-        /* Убираем псевдоэлементы для колес, если используем реальные изображения */
-        /* .traffic-car::before, .traffic-car::after {
-            content: '';
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            background-color: #333;
-            border-radius: 50%;
-            top: 30px;
-        }
-
-        .traffic-car::before {
-            left: 10px;
-        }
-
-        .traffic-car::after {
-            right: 10px;
-        } */
 
         #controls {
             position: absolute;
@@ -223,9 +193,11 @@
 
         // Массив с URL изображений для машинок (замени на свои реальные изображения)
         // Важно: изображения должны быть примерно одного размера и пропорций
+        // Убедитесь, что эти изображения уже включают колеса и не имеют прозрачности,
+        // если вы хотите, чтобы они были "не прозрачными".
         const carImages = [
             'https://i.imgur.com/example_player_car.png', // Замени на URL своей машинки игрока
-            'https://i.imgur.com/example_player_car2.png' // Если хочешь несколько вариантов для игрока
+            // Пример: 'https://i.imgur.com/your_red_car.png'
         ];
 
         const trafficCarImages = [
@@ -233,6 +205,7 @@
             'https://i.imgur.com/example_traffic_car2.png', // Замени на URL машинки трафика 2
             'https://i.imgur.com/example_traffic_car3.png', // Замени на URL машинки трафика 3
             'https://i.imgur.com/example_traffic_car4.png'  // И так далее
+            // Пример: 'https://i.imgur.com/your_blue_car.png', 'https://i.imgur.com/your_green_car.png'
         ];
 
         // Устанавливаем изображение для машинки игрока
@@ -393,15 +366,6 @@
                 }
             }
         });
-
-        // Игровой цикл
-        function gameLoop() {
-            if (!gameRunning) return; // Останавливаем цикл, если игра окончена
-
-            updateTraffic();
-            checkCollision(); // Проверяем столкновения на каждом кадре
-            requestAnimationFrame(gameLoop); // Запрашиваем следующий кадр анимации
-        }
 
         // Запускаем игровой цикл
         gameLoop();
