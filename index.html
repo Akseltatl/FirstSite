@@ -2,135 +2,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра про Машинки (Столкновения, Изображения, Звуки)</title>
+    <title>Уход от погони: Игра за преступника</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB; /* Небо */
+            background-color: #507D2A; /* Темно-зеленый фон (трава/лес) */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: Arial, sans-serif;
+            font-family: 'Press Start 2P', cursive; /* Пример ретро-шрифта */
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         }
+
+        /* Импорт шрифта (если используется) */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
         #game-container {
             position: relative;
-            width: 800px; /* Ширина игрового поля */
-            height: 400px; /* Высота игрового поля */
-            background-color: #555; /* Дорога */
-            border: 5px solid #333;
+            width: 900px; /* Шире для ощущения дороги */
+            height: 500px; /* Выше для ощущения дороги */
+            background-color: #333; /* Дорога */
+            border: 8px solid #222;
             overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
         }
 
-        #road-line {
+        /* Дорожная разметка - теперь будет двигаться для эффекта скорости */
+        .road-line {
             position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            height: 10px;
-            background-color: #FFF; /* Белая разметка */
-            transform: translateY(-50%);
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            width: 10px;
+            height: 50px; /* Длина штриха */
+            background-color: #FFF;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            animation: road-animation 2s linear infinite; /* Анимация движения */
         }
 
-        #car {
+        /* Анимация для дорожной разметки */
+        @keyframes road-animation {
+            from { transform: translateY(-50px); } /* Начинаем выше экрана */
+            to { transform: translateY(500px); } /* Уходим за нижний край */
+        }
+
+        /* Позиции для дорожных линий */
+        #road-line-left { left: 30%; top: -50px; }
+        #road-line-center { left: 50%; top: -150px; }
+        #road-line-right { left: 70%; top: -250px; }
+
+
+        #player-car {
             position: absolute;
-            bottom: 20px;
-            left: 50px;
-            /* Установите эти размеры в соответствии с пропорциями вашего изображения машинки */
-            width: 100px; /* Пример: увеличена ширина */
-            height: 50px; /* Пример: увеличена высота */
-            
-            /* background-color: #FF0000; */ /* Убираем фоновый цвет, используем изображение */
-            border-radius: 5px; /* Можно уменьшить или убрать, если изображение имеет свои углы */
+            bottom: 50px; /* Позиция игрока */
+            left: 50%;
+            transform: translateX(-50%); /* Центрируем */
+            width: 100px; /* Ширина машинки игрока */
+            height: 50px; /* Высота машинки игрока */
+            border-radius: 5px;
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
             transition: left 0.1s linear, bottom 0.1s linear;
             z-index: 2;
-            
-            /* Стили для изображения */
-            background-size: contain; /* Масштабирует изображение, чтобы оно поместилось */
-            background-repeat: no-repeat;
-            background-position: center; /* Центрирует изображение */
-            /* Убедитесь, что изображение не имеет прозрачности, если вы хотите, чтобы оно было "не прозрачным" */
-        }
-
-        .traffic-car {
-            position: absolute;
-            /* Установите эти размеры в соответствии с пропорциями ваших изображений машинок трафика */
-            width: 100px; /* Пример: увеличена ширина */
-            height: 50px; /* Пример: увеличена высота */
-            
-            border-radius: 5px; /* Можно уменьшить или убрать */
-            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
-            z-index: 1;
-            
-            /* Стили для изображения */
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            /* Убедитесь, что изображение не имеет прозрачности, если вы хотите, чтобы оно было "не прозрачным" */
+            background-image: url('https://i.imgur.com/example_player_car.png'); /* ЗАМЕНИ НА СВОЕ ИЗОБРАЖЕНИЕ ПРЕСТУПНОЙ МАШИНЫ */
         }
 
-        #controls {
+        .police-car {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
+            width: 100px; /* Ширина полицейской машины */
+            height: 50px; /* Высота полицейской машины */
+            border-radius: 5px;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-image: url('https://i.imgur.com/example_police_car.png'); /* ЗАМЕНИ НА СВОЕ ИЗОБРАЖЕНИЕ ПОЛИЦЕЙСКОЙ МАШИНЫ */
+        }
+
+        /* UI элементы */
+        #score-display, #health-display {
+            position: absolute;
+            top: 10px;
+            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 5px;
+            font-size: 1.2em;
             z-index: 10;
         }
 
-        .control-button {
-            padding: 10px 20px;
-            font-size: 18px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
+        #score-display {
+            left: 10px;
         }
 
-        .control-button:hover {
-            background-color: #45a049;
-        }
-
-        .control-button:active {
-            background-color: #3e8e41;
-        }
-
-        #instructions {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            text-align: center;
-            z-index: 10;
+        #health-display {
+            right: 10px;
+            color: #FFD700; /* Золотой цвет для здоровья */
         }
 
         #game-over-screen {
-            display: none; /* Скрыт по умолчанию */
+            display: none;
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.9);
             color: white;
-            font-size: 3em;
+            font-size: 2.5em;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 100;
+            text-align: center;
+        }
+
+        #game-over-screen p {
+            margin-bottom: 20px;
         }
 
         #game-over-screen button {
@@ -138,237 +129,340 @@
             padding: 15px 30px;
             font-size: 1.2em;
             cursor: pointer;
-            background-color: #FF0000;
+            background-color: #FF4500; /* Оранжево-красный */
             color: white;
             border: none;
             border-radius: 5px;
             transition: background-color 0.3s ease;
+            font-family: 'Press Start 2P', cursive;
         }
 
         #game-over-screen button:hover {
-            background-color: #CC0000;
+            background-color: #CC3700;
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            font-size: 2.5em;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 101; /* Выше, чем game-over-screen */
+            text-align: center;
+        }
+
+        #start-screen button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        #start-screen button:hover {
+            background-color: #45a049;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            text-align: center;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <div id="road-line"></div>
-        <div id="car"></div>
-    </div>
+        <!-- Дорожные линии -->
+        <div class="road-line" style="left: 30%;"></div>
+        <div class="road-line" style="left: 50%;"></div>
+        <div class="road-line" style="left: 70%;"></div>
 
-    <div id="controls">
-        <button class="control-button" onclick="moveCar('up')">Вверх</button>
-        <button class="control-button" onclick="moveCar('left')">Влево</button>
-        <button class="control-button" onclick="moveCar('right')">Вправо</button>
-        <button class="control-button" onclick="moveCar('down')">Вниз</button>
-    </div>
-
-    <div id="instructions">
-        Используйте кнопки или клавиши W/A/S/D (или стрелки) для управления машинкой.
+        <div id="player-car"></div>
+        
+        <div id="score-display">Очки: 0</div>
+        <div id="health-display">Урон: 0%</div>
     </div>
 
     <div id="game-over-screen">
-        <p>Игра окончена!</p>
+        <p>ПОЙМАН!</p>
+        <p>Набрано очков: <span id="final-score">0</span></p>
         <button onclick="restartGame()">Начать заново</button>
     </div>
 
-    <!-- Аудио элемент для звука столкновения -->
-    <audio id="collisionSound" src="collision.mp3" preload="auto"></audio>
+    <div id="start-screen">
+        <h1>Уход от погони</h1>
+        <p>Управляй машиной, уходи от полиции!</p>
+        <p>Клавиши: W/A/S/D или Стрелки</p>
+        <button onclick="startGame()">Начать игру</button>
+    </div>
+
+    <!-- Аудио элементы -->
+    <audio id="collisionSound" src="collision.mp3" preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК СТОЛКНОВЕНИЯ -->
+    <audio id="engineSound" src="engine.mp3" loop preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК ДВИГАТЕЛЯ -->
+    <audio id="sirenSound" src="siren.mp3" loop preload="auto"></audio> <!-- ЗАМЕНИ НА СВОЙ ЗВУК СИРЕНЫ -->
 
     <script>
-        const car = document.getElementById('car');
+        const playerCar = document.getElementById('player-car');
         const gameContainer = document.getElementById('game-container');
         const gameOverScreen = document.getElementById('game-over-screen');
+        const startScreen = document.getElementById('start-screen');
+        const scoreDisplay = document.getElementById('score-display');
+        const healthDisplay = document.getElementById('health-display');
+        const finalScoreDisplay = document.getElementById('final-score');
+
         const collisionSound = document.getElementById('collisionSound');
+        const engineSound = document.getElementById('engineSound');
+        const sirenSound = document.getElementById('sirenSound');
 
-        const carSpeed = 15;
-        const trafficSpeed = 3;
-        const trafficCars = [];
-        const maxTrafficCars = 4;
-        const trafficSpawnInterval = 1500;
+        const playerSpeed = 8; // Скорость игрока
+        const policeSpeed = 4; // Базовая скорость полиции
+        const policeCars = []; // Массив для хранения полицейских машин
+        const maxPoliceCars = 3; // Максимальное количество полицейских на экране
+        const policeSpawnInterval = 2000; // Интервал появления новых полицейских (мс)
 
-        let lastTrafficSpawnTime = 0;
-        let gameRunning = true; // Флаг состояния игры
+        const maxHealth = 100; // Максимальное "здоровье" игрока
+        const collisionDamage = 25; // Урон от одного столкновения
 
-        // Массив с URL изображений для машинок (замени на свои реальные изображения)
-        // Важно: изображения должны быть примерно одного размера и пропорций
-        // Убедитесь, что эти изображения уже включают колеса и не имеют прозрачности,
-        // если вы хотите, чтобы они были "не прозрачными".
-        const carImages = [
-            'https://i.imgur.com/example_player_car.png', // Замени на URL своей машинки игрока
-            // Пример: 'https://i.imgur.com/your_red_car.png'
-        ];
+        let lastPoliceSpawnTime = 0;
+        let gameRunning = false; // Флаг состояния игры
+        let score = 0;
+        let currentHealth = maxHealth;
+        let animationFrameId; // Для управления requestAnimationFrame
 
-        const trafficCarImages = [
-            'https://i.imgur.com/example_traffic_car1.png', // Замени на URL машинки трафика 1
-            'https://i.imgur.com/example_traffic_car2.png', // Замени на URL машинки трафика 2
-            'https://i.imgur.com/example_traffic_car3.png', // Замени на URL машинки трафика 3
-            'https://i.imgur.com/example_traffic_car4.png'  // И так далее
-            // Пример: 'https://i.imgur.com/your_blue_car.png', 'https://i.imgur.com/your_green_car.png'
-        ];
+        // --- Изображения (ЗАМЕНИ НА СВОИ РЕАЛЬНЫЕ URL) ---
+        const playerCarImage = 'https://i.imgur.com/example_player_car.png';
+        const policeCarImage = 'https://i.imgur.com/example_police_car.png';
 
         // Устанавливаем изображение для машинки игрока
-        car.style.backgroundImage = `url(${carImages[0]})`;
-        car.style.backgroundColor = 'transparent'; // Убираем фоновый цвет, если есть изображение
+        playerCar.style.backgroundImage = `url(${playerCarImage})`;
 
-        // Функция для генерации случайного яркого цвета (если изображения не используются)
-        function getRandomColor() {
-            const letters = '0123456789ABCDEF';
-            let color = '#';
-            for (let i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
+        // --- Функции управления игрой ---
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            gameRunning = true;
+            score = 0;
+            currentHealth = maxHealth;
+            updateScoreDisplay();
+            updateHealthDisplay();
+            
+            // Сбрасываем позицию игрока
+            playerCar.style.left = '50%';
+            playerCar.style.bottom = '50px';
+
+            // Очищаем старых полицейских
+            policeCars.forEach(pc => gameContainer.removeChild(pc));
+            policeCars.length = 0;
+            lastPoliceSpawnTime = 0;
+
+            // Запускаем звуки
+            engineSound.play();
+            sirenSound.play();
+
+            gameLoop(); // Запускаем игровой цикл
         }
 
-        function moveCar(direction) {
-            if (!gameRunning) return; // Не двигаем машинку, если игра окончена
+        function endGame() {
+            gameRunning = false;
+            cancelAnimationFrame(animationFrameId); // Останавливаем игровой цикл
+            gameOverScreen.style.display = 'flex';
+            finalScoreDisplay.textContent = score;
 
-            let currentLeft = parseInt(car.style.left || 50);
-            let currentBottom = parseInt(car.style.bottom || 20);
+            // Останавливаем звуки
+            engineSound.pause();
+            sirenSound.pause();
+            engineSound.currentTime = 0;
+            sirenSound.currentTime = 0;
+        }
+
+        function restartGame() {
+            startGame(); // Просто перезапускаем игру
+        }
+
+        // --- Функции движения и создания объектов ---
+
+        function movePlayerCar(direction) {
+            if (!gameRunning) return;
+
+            let currentLeft = playerCar.offsetLeft;
+            let currentBottom = playerCar.offsetTop; // Используем offsetTop для вертикального движения
+
             let newLeft = currentLeft;
             let newBottom = currentBottom;
 
+            // Получаем размеры контейнера и машины
+            const gameContainerRect = gameContainer.getBoundingClientRect();
+            const playerCarRect = playerCar.getBoundingClientRect();
+
             if (direction === 'left') {
-                newLeft = currentLeft - carSpeed;
+                newLeft = currentLeft - playerSpeed;
             } else if (direction === 'right') {
-                newLeft = currentLeft + carSpeed;
+                newLeft = currentLeft + playerSpeed;
             } else if (direction === 'up') {
-                newBottom = currentBottom + carSpeed;
+                newBottom = currentBottom - playerSpeed; // Вверх по экрану = уменьшение top
             } else if (direction === 'down') {
-                newBottom = currentBottom - carSpeed;
+                newBottom = currentBottom + playerSpeed; // Вниз по экрану = увеличение top
             }
 
-            const maxLeft = gameContainer.offsetWidth - car.offsetWidth;
-            const maxBottom = gameContainer.offsetHeight - car.offsetHeight;
+            // Ограничиваем движение игрока в пределах игрового поля
+            newLeft = Math.max(0, Math.min(newLeft, gameContainerRect.width - playerCarRect.width));
+            newBottom = Math.max(0, Math.min(newBottom, gameContainerRect.height - playerCarRect.height));
 
-            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-            newBottom = Math.max(0, Math.min(newBottom, maxBottom));
-
-            car.style.left = newLeft + 'px';
-            car.style.bottom = newBottom + 'px';
+            playerCar.style.left = newLeft + 'px';
+            playerCar.style.top = newBottom + 'px'; // Используем top для вертикального позиционирования
         }
 
-        function createTrafficCar() {
-            const trafficCar = document.createElement('div');
-            trafficCar.classList.add('traffic-car');
+        function createPoliceCar() {
+            const policeCar = document.createElement('div');
+            policeCar.classList.add('police-car');
+            policeCar.style.backgroundImage = `url(${policeCarImage})`;
             
-            // Выбираем случайное изображение для машинки трафика
-            const randomImage = trafficCarImages[Math.floor(Math.random() * trafficCarImages.length)];
-            trafficCar.style.backgroundImage = `url(${randomImage})`;
-            trafficCar.style.backgroundColor = 'transparent'; // Убираем фоновый цвет
-
-            // Случайная позиция по вертикали (в пределах дороги)
-            // Учитываем высоту машинки, чтобы она не выходила за границы
-            const randomBottom = Math.random() * (gameContainer.offsetHeight - trafficCar.offsetHeight);
-            trafficCar.style.bottom = randomBottom + 'px';
+            // Случайная позиция по горизонтали (в пределах дороги)
+            const randomLeft = Math.random() * (gameContainer.offsetWidth - policeCar.offsetWidth);
+            policeCar.style.left = randomLeft + 'px';
             
-            // Появляется справа
-            trafficCar.style.left = gameContainer.offsetWidth + 'px'; 
+            // Появляется сверху
+            policeCar.style.top = -policeCar.offsetHeight + 'px'; // Появляется чуть выше верхнего края
             
-            gameContainer.appendChild(trafficCar);
-            trafficCars.push(trafficCar);
+            gameContainer.appendChild(policeCar);
+            policeCars.push(policeCar);
         }
 
-        function checkCollision() {
-            const carRect = car.getBoundingClientRect(); // Получаем размеры и позицию машинки игрока
+        function updatePoliceCars() {
+            if (!gameRunning) return;
 
-            for (let i = 0; i < trafficCars.length; i++) {
-                const trafficCar = trafficCars[i];
-                const trafficCarRect = trafficCar.getBoundingClientRect(); // Размеры и позиция машинки трафика
+            const currentTime = Date.now();
 
-                // Простая проверка столкновений (пересечение прямоугольников)
-                if (carRect.left < trafficCarRect.right &&
-                    carRect.right > trafficCarRect.left &&
-                    carRect.top < trafficCarRect.bottom &&
-                    carRect.bottom > trafficCarRect.top) {
-                    
-                    playCollisionSound(); // Воспроизводим звук столкновения
-                    endGame(); // Если есть столкновение, завершаем игру
-                    return true; // Столкновение произошло
+            // Создаем новую полицейскую машину, если пришло время и их не слишком много
+            if (policeCars.length < maxPoliceCars && currentTime - lastPoliceSpawnTime > policeSpawnInterval) {
+                createPoliceCar();
+                lastPoliceSpawnTime = currentTime;
+            }
+
+            // Перемещаем и удаляем полицейские машины
+            for (let i = 0; i < policeCars.length; i++) {
+                const policeCar = policeCars[i];
+                let currentTop = parseInt(policeCar.style.top);
+                let newTop = currentTop + policeSpeed; // Движение вниз
+
+                if (newTop > gameContainer.offsetHeight) { // Если машина ушла за нижний край
+                    gameContainer.removeChild(policeCar);
+                    policeCars.splice(i, 1); // Удаляем из массива
+                    i--; // Корректируем индекс после удаления
+                    score += 10; // Начисляем очки за уход от машины
+                    updateScoreDisplay();
+                } else {
+                    policeCar.style.top = newTop + 'px';
                 }
             }
-            return false; // Столкновений нет
+        }
+
+        // --- Обновление UI ---
+
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Очки: ${score}`;
+        }
+
+        function updateHealthDisplay() {
+            healthDisplay.textContent = `Урон: ${Math.max(0, maxHealth - currentHealth)}%`;
+            if (currentHealth <= 0) {
+                endGame();
+            }
+        }
+
+        // --- Обнаружение столкновений ---
+
+        function checkCollisions() {
+            const playerRect = playerCar.getBoundingClientRect();
+
+            for (let i = 0; i < policeCars.length; i++) {
+                const policeCar = policeCars[i];
+                const policeRect = policeCar.getBoundingClientRect();
+
+                // Проверка пересечения прямоугольников
+                if (playerRect.left < policeRect.right &&
+                    playerRect.right > policeRect.left &&
+                    playerRect.top < policeRect.bottom &&
+                    playerRect.bottom > policeRect.top) {
+                    
+                    // Столкновение!
+                    playCollisionSound();
+                    currentHealth -= collisionDamage;
+                    updateHealthDisplay();
+
+                    // Удаляем столкнувшуюся полицейскую машину
+                    gameContainer.removeChild(policeCar);
+                    policeCars.splice(i, 1);
+                    i--; // Корректируем индекс
+
+                    if (currentHealth <= 0) {
+                        endGame();
+                    }
+                }
+            }
         }
 
         function playCollisionSound() {
             if (collisionSound) {
-                collisionSound.currentTime = 0; // Сбрасываем звук на начало, если он уже играет
+                collisionSound.currentTime = 0;
                 collisionSound.play();
             }
         }
 
-        function endGame() {
-            gameRunning = false; // Останавливаем игру
-            gameOverScreen.style.display = 'flex'; // Показываем экран "Игра окончена"
-            // Можно добавить другие действия, например, остановить анимацию трафика
-        }
+        // --- Управление с клавиатуры ---
 
-        function restartGame() {
-            // Скрываем экран "Игра окончена"
-            gameOverScreen.style.display = 'none';
-
-            // Сбрасываем позицию машинки игрока
-            car.style.left = '50px';
-            car.style.bottom = '20px';
-
-            // Удаляем все машинки трафика
-            trafficCars.forEach(tc => gameContainer.removeChild(tc));
-            trafficCars.length = 0; // Очищаем массив
-
-            // Сбрасываем таймер появления трафика
-            lastTrafficSpawnTime = 0;
-
-            // Запускаем игру заново
-            gameRunning = true;
-            gameLoop(); // Перезапускаем игровой цикл
-        }
-
-        function updateTraffic() {
-            if (!gameRunning) return; // Не обновляем трафик, если игра окончена
-
-            const currentTime = Date.now();
-
-            // Создаем новую машинку трафика, если пришло время и их не слишком много
-            if (trafficCars.length < maxTrafficCars && currentTime - lastTrafficSpawnTime > trafficSpawnInterval) {
-                createTrafficCar();
-                lastTrafficSpawnTime = currentTime;
-            }
-
-            // Перемещаем и удаляем машинки трафика
-            for (let i = 0; i < trafficCars.length; i++) {
-                const trafficCar = trafficCars[i];
-                let currentLeft = parseInt(trafficCar.style.left);
-                let newLeft = currentLeft - trafficSpeed; // Движение влево
-
-                if (newLeft + trafficCar.offsetWidth < 0) { // Если машинка ушла за левый край
-                    gameContainer.removeChild(trafficCar);
-                    trafficCars.splice(i, 1); // Удаляем из массива
-                    i--; // Корректируем индекс после удаления
-                } else {
-                    trafficCar.style.left = newLeft + 'px';
-                }
-            }
-        }
-
-        // Добавляем управление с клавиатуры
         document.addEventListener('keydown', (event) => {
-            if (gameRunning) { // Обрабатываем нажатия только если игра активна
-                if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-                    moveCar('left');
-                } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
-                    moveCar('right');
-                } else if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
-                    moveCar('up');
-                } else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
-                    moveCar('down');
-                }
+            if (!gameRunning) return;
+
+            if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
+                movePlayerCar('left');
+            } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+                movePlayerCar('right');
+            } else if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
+                movePlayerCar('up');
+            } else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
+                movePlayerCar('down');
             }
         });
 
-        // Запускаем игровой цикл
-        gameLoop();
+        // --- Игровой цикл ---
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            updatePoliceCars();
+            checkCollisions();
+            
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // Инициализация: показываем стартовый экран при загрузке
+        window.onload = () => {
+            startScreen.style.display = 'flex';
+            gameOverScreen.style.display = 'none';
+        };
     </script>
 
 </body>
