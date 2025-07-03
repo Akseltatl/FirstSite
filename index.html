@@ -207,18 +207,16 @@
         const explosionSound = document.getElementById('explosionSound');
         const gameOverSound = document.getElementById('gameOverSound');
 
-        // --- ИЗМЕНЕННЫЕ ПАРАМЕТРЫ СКОРОСТИ ---
-        const playerSpeed = 10; // Игрок быстрее
+        const playerSpeed = 10; 
         const bulletSpeed = 10;
-        const enemySpeed = 1;   // Враги медленнее
-        // ------------------------------------
+        const enemySpeed = 1;   
 
-        const fireRate = 200; // Миллисекунды между выстрелами
+        const fireRate = 200; 
 
         const bullets = [];
         const enemies = [];
         const maxEnemies = 5;
-        const enemySpawnInterval = 2000; // Интервал появления врагов (увеличил, чтобы было проще)
+        const enemySpawnInterval = 2000; 
 
         let lastShotTime = 0;
         let lastEnemySpawnTime = 0;
@@ -227,8 +225,8 @@
         let animationFrameId;
 
         // --- ВАЖНО: ЗАМЕНИ ЭТИ URL НА СВОИ РЕАЛЬНЫЕ ИЗОБРАЖЕНИЯ! ---
-        const playerImageURL = 'https://i.imgur.com/your_player_ship.png'; // <-- ВСТАВЬ СЮДА СВОЙ URL
-        const enemyImageURL = 'https://i.imgur.com/your_enemy_ship.png';   // <-- ВСТАВЬ СЮДА СВОЙ URL
+        const playerImageURL = 'https://i.imgur.com/your_player_ship.png'; 
+        const enemyImageURL = 'https://i.imgur.com/your_enemy_ship.png';   
         // ----------------------------------------------------------
 
         // Устанавливаем изображение для игрока
@@ -243,12 +241,9 @@
             score = 0;
             updateScoreDisplay();
             
-            // Сбрасываем позицию игрока
             player.style.left = '50%';
-            // Устанавливаем начальную позицию игрока по вертикали (например, 50px от низа)
             player.style.top = (gameContainer.offsetHeight - player.offsetHeight - 50) + 'px';
 
-            // Очищаем старые снаряды и врагов
             bullets.forEach(b => gameContainer.removeChild(b));
             bullets.length = 0;
             enemies.forEach(e => gameContainer.removeChild(e));
@@ -257,7 +252,7 @@
             lastShotTime = 0;
             lastEnemySpawnTime = 0;
 
-            gameLoop(); // Запускаем игровой цикл
+            gameLoop(); 
         }
 
         function endGame() {
@@ -278,7 +273,7 @@
             if (!gameRunning) return;
 
             let currentLeft = player.offsetLeft;
-            let currentTop = player.offsetTop; // Получаем текущую позицию по вертикали
+            let currentTop = player.offsetTop; 
 
             let newLeft = currentLeft;
             let newTop = currentTop;
@@ -290,37 +285,35 @@
                 newLeft = currentLeft - playerSpeed;
             } else if (direction === 'right') {
                 newLeft = currentLeft + playerSpeed;
-            } else if (direction === 'up') { // Движение вверх
+            } else if (direction === 'up') { 
                 newTop = currentTop - playerSpeed;
-            } else if (direction === 'down') { // Движение вниз
+            } else if (direction === 'down') { 
                 newTop = currentTop + playerSpeed;
             }
 
-            // Ограничиваем движение игрока в пределах игрового поля
             newLeft = Math.max(0, Math.min(newLeft, gameContainerRect.width - playerRect.width));
             newTop = Math.max(0, Math.min(newTop, gameContainerRect.height - playerRect.height));
 
             player.style.left = newLeft + 'px';
-            player.style.top = newTop + 'px'; // Устанавливаем новую позицию по вертикали
+            player.style.top = newTop + 'px'; 
         }
 
         function createBullet() {
             const currentTime = Date.now();
             if (currentTime - lastShotTime < fireRate) {
-                return; // Слишком быстро
+                return; 
             }
             lastShotTime = currentTime;
 
             const bullet = document.createElement('div');
             bullet.classList.add('bullet');
             
-            // Позиция снаряда: по центру игрока, чуть выше
             bullet.style.left = (player.offsetLeft + player.offsetWidth / 2 - bullet.offsetWidth / 2) + 'px';
             bullet.style.top = (player.offsetTop - bullet.offsetHeight) + 'px';
             
             gameContainer.appendChild(bullet);
             bullets.push(bullet);
-            shootSound.currentTime = 0; // Сброс звука для быстрого повтора
+            shootSound.currentTime = 0; 
             shootSound.play().catch(e => console.log("Ошибка воспроизведения звука выстрела:", e));
         }
 
@@ -328,9 +321,9 @@
             for (let i = 0; i < bullets.length; i++) {
                 const bullet = bullets[i];
                 let currentTop = parseInt(bullet.style.top);
-                let newTop = currentTop - bulletSpeed; // Движение вверх
+                let newTop = currentTop - bulletSpeed; 
 
-                if (newTop + bullet.offsetHeight < 0) { // Если снаряд ушел за верхний край
+                if (newTop + bullet.offsetHeight < 0) { 
                     gameContainer.removeChild(bullet);
                     bullets.splice(i, 1);
                     i--;
@@ -343,13 +336,15 @@
         function createEnemy() {
             const enemy = document.createElement('div');
             enemy.classList.add('enemy');
-            enemy.style.backgroundImage = `url(${enemyImageURL})`; // Устанавливаем изображение
+            enemy.style.backgroundImage = `url(${enemyImageURL})`; 
             
-            // Случайная позиция по горизонтали
-            const randomLeft = Math.random() * (gameContainer.offsetWidth - enemy.offsetWidth);
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ: ГЕНЕРАЦИЯ randomLeft ---
+            // Гарантируем, что враг полностью помещается по горизонтали
+            const maxLeft = gameContainer.offsetWidth - enemy.offsetWidth;
+            const randomLeft = Math.random() * maxLeft; 
             enemy.style.left = randomLeft + 'px';
+            // ---------------------------------------------
             
-            // Появляется сверху
             enemy.style.top = -enemy.offsetHeight + 'px';
             
             gameContainer.appendChild(enemy);
@@ -359,24 +354,22 @@
         function updateEnemies() {
             const currentTime = Date.now();
 
-            // Создаем нового врага
             if (enemies.length < maxEnemies && currentTime - lastEnemySpawnTime > enemySpawnInterval) {
                 createEnemy();
                 lastEnemySpawnTime = currentTime;
             }
 
-            // Перемещаем и удаляем врагов
             for (let i = 0; i < enemies.length; i++) {
                 const enemy = enemies[i];
                 let currentTop = parseInt(enemy.style.top);
-                let newTop = currentTop + enemySpeed; // Движение вниз
+                let newTop = currentTop + enemySpeed; 
 
-                if (newTop > gameContainer.offsetHeight) { // Если враг достиг нижней части
+                if (newTop > gameContainer.offsetHeight) { 
                     gameContainer.removeChild(enemy);
                     enemies.splice(i, 1);
                     i--;
-                    endGame(); // Игра окончена, если враг прошел
-                    return; // Выходим, так как игра закончилась
+                    endGame(); 
+                    return; 
                 } else {
                     enemy.style.top = newTop + 'px';
                 }
@@ -394,7 +387,6 @@
         function checkCollisions() {
             const playerRect = player.getBoundingClientRect();
 
-            // Проверка столкновений снарядов с врагами
             for (let i = 0; i < bullets.length; i++) {
                 const bullet = bullets[i];
                 const bulletRect = bullet.getBoundingClientRect();
@@ -408,26 +400,24 @@
                         bulletRect.top < enemyRect.bottom &&
                         bulletRect.bottom > enemyRect.top) {
                         
-                        // Столкновение снаряда с врагом!
                         explosionSound.currentTime = 0;
                         explosionSound.play().catch(e => console.log("Ошибка воспроизведения звука взрыва:", e));
 
                         gameContainer.removeChild(bullet);
                         bullets.splice(i, 1);
-                        i--; // Корректируем индекс
+                        i--; 
 
                         gameContainer.removeChild(enemy);
                         enemies.splice(j, 1);
-                        j--; // Корректируем индекс
+                        j--; 
 
-                        score += 100; // Очки за уничтожение врага
+                        score += 100; 
                         updateScoreDisplay();
-                        break; // Выходим из внутреннего цикла, так как снаряд уже попал
+                        break; 
                     }
                 }
             }
 
-            // Проверка столкновений игрока с врагами
             for (let i = 0; i < enemies.length; i++) {
                 const enemy = enemies[i];
                 const enemyRect = enemy.getBoundingClientRect();
@@ -437,11 +427,10 @@
                     playerRect.top < enemyRect.bottom &&
                     playerRect.bottom > enemyRect.top) {
                     
-                    // Столкновение игрока с врагом!
                     explosionSound.currentTime = 0;
                     explosionSound.play().catch(e => console.log("Ошибка воспроизведения звука взрыва:", e));
-                    endGame(); // Игра окончена
-                    return; // Выходим, так как игра закончилась
+                    endGame(); 
+                    return; 
                 }
             }
         }
@@ -455,11 +444,11 @@
                 movePlayer('left');
             } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
                 movePlayer('right');
-            } else if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') { // Движение вверх
+            } else if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') { 
                 movePlayer('up');
-            } else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') { // Движение вниз
+            } else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') { 
                 movePlayer('down');
-            } else if (event.key === ' ' || event.key === 'Spacebar') { // Пробел для стрельбы
+            } else if (event.key === ' ' || event.key === 'Spacebar') { 
                 createBullet();
             }
         });
