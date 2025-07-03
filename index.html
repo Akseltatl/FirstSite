@@ -21,7 +21,7 @@
             height: 400px; /* Высота игрового поля */
             background-color: #555; /* Дорога */
             border: 5px solid #333;
-            overflow: hidden; /* Важно для движения машинки */
+            overflow: hidden; /* Важно для движения машинки и трафика */
         }
 
         #road-line {
@@ -44,7 +44,8 @@
             background-color: #FF0000; /* Красная машинка */
             border-radius: 10px;
             box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
-            transition: left 0.1s linear; /* Плавное движение */
+            transition: left 0.1s linear, bottom 0.1s linear; /* Плавное движение */
+            z-index: 2; /* Машинка поверх трафика */
         }
 
         #car::before, #car::after {
@@ -62,6 +63,34 @@
         }
 
         #car::after {
+            right: 10px;
+        }
+
+        .traffic-car {
+            position: absolute;
+            width: 80px;
+            height: 40px;
+            background-color: #00F; /* Синяя машинка трафика */
+            border-radius: 10px;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 1; /* Трафик под машинкой игрока */
+        }
+
+        .traffic-car::before, .traffic-car::after {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: #333; /* Колеса */
+            border-radius: 50%;
+            top: 30px;
+        }
+
+        .traffic-car::before {
+            left: 10px;
+        }
+
+        .traffic-car::after {
             right: 10px;
         }
 
@@ -117,34 +146,92 @@
     </div>
 
     <div id="controls">
+        <button class="control-button" onclick="moveCar('up')">Вверх</button>
         <button class="control-button" onclick="moveCar('left')">Влево</button>
         <button class="control-button" onclick="moveCar('right')">Вправо</button>
+        <button class="control-button" onclick="moveCar('down')">Вниз</button>
     </div>
 
     <div id="instructions">
-        Используйте кнопки "Влево" и "Вправо" или клавиши A/D (или стрелки) для управления машинкой.
+        Используйте кнопки или клавиши W/A/S/D (или стрелки) для управления машинкой.
     </div>
 
     <script>
         const car = document.getElementById('car');
         const gameContainer = document.getElementById('game-container');
-        const carSpeed = 10; // Скорость движения машинки
+        const carSpeed = 15; // Скорость движения машинки
+        const trafficSpeed = 3; // Скорость движения трафика
+        const trafficCars = []; // Массив для хранения машинок трафика
+        const maxTrafficCars = 3; // Максимальное количество машинок трафика на экране
+        const trafficSpawnInterval = 2000; // Интервал появления новых машинок трафика (мс)
+
+        let lastTrafficSpawnTime = 0;
 
         function moveCar(direction) {
-            let currentLeft = parseInt(car.style.left || 50); // Получаем текущую позицию или начальную
-            let newLeft;
+            let currentLeft = parseInt(car.style.left || 50);
+            let currentBottom = parseInt(car.style.bottom || 20);
+            let newLeft = currentLeft;
+            let newBottom = currentBottom;
 
             if (direction === 'left') {
                 newLeft = currentLeft - carSpeed;
             } else if (direction === 'right') {
                 newLeft = currentLeft + carSpeed;
+            } else if (direction === 'up') {
+                newBottom = currentBottom + carSpeed;
+            } else if (direction === 'down') {
+                newBottom = currentBottom - carSpeed;
             }
 
             // Ограничиваем движение машинки в пределах игрового поля
             const maxLeft = gameContainer.offsetWidth - car.offsetWidth;
+            const maxBottom = gameContainer.offsetHeight - car.offsetHeight;
+
             newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+            newBottom = Math.max(0, Math.min(newBottom, maxBottom));
 
             car.style.left = newLeft + 'px';
+            car.style.bottom = newBottom + 'px';
+        }
+
+        function createTrafficCar() {
+            const trafficCar = document.createElement('div');
+            trafficCar.classList.add('traffic-car');
+            
+            // Случайная позиция по горизонтали
+            const randomLeft = Math.random() * (gameContainer.offsetWidth - trafficCar.offsetWidth);
+            trafficCar.style.left = randomLeft + 'px';
+            
+            // Появляется сверху
+            trafficCar.style.bottom = gameContainer.offsetHeight + 'px'; 
+            
+            gameContainer.appendChild(trafficCar);
+            trafficCars.push(trafficCar);
+        }
+
+        function updateTraffic() {
+            const currentTime = Date.now();
+
+            // Создаем новую машинку трафика, если пришло время и их не слишком много
+            if (trafficCars.length < maxTrafficCars && currentTime - lastTrafficSpawnTime > trafficSpawnInterval) {
+                createTrafficCar();
+                lastTrafficSpawnTime = currentTime;
+            }
+
+            // Перемещаем и удаляем машинки трафика
+            for (let i = 0; i < trafficCars.length; i++) {
+                const trafficCar = trafficCars[i];
+                let currentBottom = parseInt(trafficCar.style.bottom);
+                let newBottom = currentBottom - trafficSpeed;
+
+                if (newBottom + trafficCar.offsetHeight < 0) { // Если машинка ушла за нижний край
+                    gameContainer.removeChild(trafficCar);
+                    trafficCars.splice(i, 1); // Удаляем из массива
+                    i--; // Корректируем индекс после удаления
+                } else {
+                    trafficCar.style.bottom = newBottom + 'px';
+                }
+            }
         }
 
         // Добавляем управление с клавиатуры
@@ -153,8 +240,21 @@
                 moveCar('left');
             } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
                 moveCar('right');
+            } else if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W') {
+                moveCar('up');
+            } else if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
+                moveCar('down');
             }
         });
+
+        // Игровой цикл
+        function gameLoop() {
+            updateTraffic();
+            requestAnimationFrame(gameLoop); // Запрашиваем следующий кадр анимации
+        }
+
+        // Запускаем игровой цикл
+        gameLoop();
     </script>
 
 </body>
