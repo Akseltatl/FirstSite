@@ -1,183 +1,125 @@
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GameX - Продажа игры</title>
-  <style>
-    /* Сброс стилей */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+from beamngpy import BeamNGDrive, Vehicle, Scenario, Road
+from beamngpy.sensors import Camera, GForces, Electrics
 
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #121212;
-      color: #f0f0f0;
-      line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+# Инициализация симулятора
+bng = BeamNGDrive(
+    home='C:/Program Files (x86)/BeamNG.drive',  # путь к игре
+    user='C:/Users/YourName/Documents/BeamNG.drive'  # папка пользователя
+)
+bng.open()
+# Создаём сценарий
+scenario = Scenario('west_coast_usa', 'simple_test')
 
-    header {
-      background: #1f1f1f;
-      padding: 20px 40px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.7);
-    }
+# Добавляем автомобиль
+vehicle = Vehicle('ego_vehicle', model='etk800', licence='AI')
+scenario.add_vehicle(vehicle, pos=(0, 0, 0), rot=(0, 0, 0))
 
-    header h1 {
-      font-size: 1.8rem;
-      color: #00bcd4;
-      cursor: default;
-    }
+# Добавляем дорогу
+road = Road('track_editor_C_line', rid='main_road')
+road.nodes = [
+    (0, 0, 0, 5),
+    (50, 0, 0, 5),
+    (100, 50, 0, 5)
+]
+scenario.add_road(road)
 
-    nav a {
-      color: #f0f0f0;
-      text-decoration: none;
-      margin-left: 25px;
-      font-weight: 600;
-      transition: color 0.3s ease;
-    }
+# Загружаем сценарий
+scenario.make(bng)
+bng.load_scenario(scenario)
+bng.start_scenario()
+# Добавляем датчики к автомобилю
+camera = Camera('front_cam', pos=(0.5, 0.2, 1.2), direction=(1, 0, 0))
+gforces = GForces('gforces')
+electrics = Electrics('electrics')
 
-    nav a:hover {
-      color: #00bcd4;
-    }
+vehicle.attach_sensor('camera', camera)
+vehicle.attach_sensor('gforces', gforces)
+vehicle.attach_sensor('electrics', electrics)
+import time
+import numpy as np
 
-    main {
-      flex: 1;
-      padding: 40px 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      align-items: center;
-    }
+def simple_ai_controller(vehicle, sensors):
+    """
+    Простейший ИИ: едет вперёд, подруливает по камере.
+    В реальности здесь будет нейросеть.
+    """
+    # Получаем данные с камеры (упрощённо)
+    img = sensors['camera'].data['colour']
+    
+    # Анализируем изображение (пример: ищем полосу)
+    # В реальности — нейросеть (например, CNN)
+    steer = np.mean(img[100:150, :, 0]) - 128  # примитивный алгоритм
+    steer = np.clip(steer / 128, -1, 1)  # нормализация
+    
+    # Управляем
+    vehicle.control(throttle=0.5, steer=steer, brakes=0)
 
-    .game-info {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
+# Основной цикл
+try:
+    while True:
+        # Обновляем данные с датчиков
+        vehicle.poll_sensors()
+        
+        # Вызываем ИИ-контроллер
+        simple_ai_controller(vehicle, vehicle.sensors)
+        
+        # Ждём кадр
+        time.sleep(1 / 30)  # 30 FPS
+except KeyboardInterrupt:
+    pass
+import cv2
+import pandas as pd
 
-    .game-info h2 {
-      font-size: 2.5rem;
-      color: #00bcd4;
-    }
+data = []
 
-    .game-info p {
-      font-size: 1.1rem;
-      color: #ccc;
-    }
+def collect_data(vehicle, sensors, step):
+    """Собираем данные: изображение + управляющие сигналы."""
+    img = sensors['camera'].data['colour']
+    throttle = vehicle.state['userThrottle']
+    steer = vehicle.state['steering']
+    speed = vehicle.state['speed']
+    
+    # Сохраняем кадр
+    cv2.imwrite(f'data/img_{step}.png', img)
+    
+    # Добавляем в датасет
+    data.append({
+        'step': step,
+        'throttle': throttle,
+        'steer': steer,
+        'speed': speed
+    })
 
-    .price {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #ff5722;
-      margin-top: 10px;
-    }
+# Цикл сбора данных
+for step in range(1000):
+    vehicle.poll_sensors()
+    collect_data(vehicle, vehicle.sensors, step)
+    vehicle.control(throttle=0.5, steer=0.1)  # ручное управление
+    time.sleep(1 / 30)
 
-    .btn-buy {
-      margin-top: 30px;
-      padding: 15px 40px;
-      background: #00bcd4;
-      border: none;
-      border-radius: 30px;
-      color: #121212;
-      font-size: 1.2rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      width: fit-content;
-      box-shadow: 0 4px 15px rgba(0,188,212,0.6);
-    }
+# Сохраняем датасет
+pd.DataFrame(data).to_csv('driving_data.csv', index=False)
+import tensorflow as tf
+from tensorflow.keras import layers, models
 
-    .btn-buy:hover {
-      background: #0097a7;
-      box-shadow: 0 6px 20px rgba(0,151,167,0.8);
-    }
+# Модель CNN для управления по изображению
+def create_model():
+    model = models.Sequential([
+        layers.Conv2D(32, (3, 3), activation='relu', input_shape=(256, 256, 3)),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.Flatten(),
+        layers.Dense(64, activation='relu'),
+        layers.Dense(2)  # throttle, steer
+    ])
+    model.compile(optimizer='adam', loss='mse')
+    return model
 
-    .game-image {
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.7);
-    }
+model = create_model()
 
-    .game-image img {
-      width: 100%;
-      height: auto;
-      display: block;
-      object-fit: cover;
-      transition: transform 0.3s ease;
-    }
-
-    .game-image img:hover {
-      transform: scale(1.05);
-    }
-
-    footer {
-      background: #1f1f1f;
-      text-align: center;
-      padding: 20px;
-      font-size: 0.9rem;
-      color: #777;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-    }
-
-    /* Адаптивность */
-    @media (max-width: 900px) {
-      main {
-        grid-template-columns: 1fr;
-        padding: 20px;
-      }
-
-      .game-info h2 {
-        font-size: 2rem;
-      }
-
-      .price {
-        font-size: 1.6rem;
-      }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>BeamNG Drive</h1>
-    <nav>
-      <a href="#features">Особенности</a>
-      <a href="#screenshots">Скриншоты</a>
-      <a href="#buy">Купить</a>
-      <a href="#contacts">Контакты</a>
-    </nav>
-  </header>
-</h2>BeamNG Drive</h2>
-      <p>Погрузитесь в реалистичный автомобильный симулятор с уникальной физикой мягких тел,
-        позволяющей моделировать поведение автомобилей с высокой степенью реализма.</p>
-      <div class="price">₽880</div>
-      <button class="btn-buy" id="buyBtn">Купить сейчас</button>
-    </section>
-
-    <section class="game-image">
-      <img class="MMImage-Origin" src="https://i.ytimg.com/vi/5e85MiyL3TE/maxresdefault.jpg" alt="Picture background" aria-hidden="true">
-    </section>
-  </main>
-
-  <footer id="contacts">
-    © 2025 GameX. Все права защищены. Контакты: support@gamex.com
-  </footer>
-
-  <script>
-    document.getElementById('buyBtn').addEventListener('click', () => {
-      alert('Спасибо за покупку! Переадресация на страницу оплаты...');
-      // Здесь можно добавить логику перехода на страницу оплаты
-    });
-  </script>
-</body>
-</html>
-<img src="https://www.beamng.com/data/avatars/l/131/131684.jpg?1449333177" width="100%">
+# Обучение (упрощённо)
+# model.fit(X_train, y_train, epochs=10)
+# Останавливаем симулятор
+bng.close()
