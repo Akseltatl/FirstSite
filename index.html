@@ -1,104 +1,20 @@
-from beamngpy import BeamNGDrive, Vehicle, Scenario, Road
-from beamngpy.sensors import Camera, GForces, Electrics
-
-bng = BeamNGDrive(
-    home='C:/Program Files (x86)/BeamNG.drive',  # путь к игре
-    user='C:/Users/YourName/Documents/BeamNG.drive'  # папка пользователя
-)
-bng.open()
-scenario = Scenario('west_coast_usa', 'simple_test')
-
-vehicle = Vehicle('ego_vehicle', model='etk800', licence='AI')
-scenario.add_vehicle(vehicle, pos=(0, 0, 0), rot=(0, 0, 0))
-
-road = Road('track_editor_C_line', rid='main_road')
-road.nodes = [
-    (0, 0, 0, 5),
-    (50, 0, 0, 5),
-    (100, 50, 0, 5)
-]
-scenario.add_road(road)
-
-scenario.make(bng)
-bng.load_scenario(scenario)
-bng.start_scenario()
-camera = Camera('front_cam', pos=(0.5, 0.2, 1.2), direction=(1, 0, 0))
-gforces = GForces('gforces')
-electrics = Electrics('electrics')
-
-vehicle.attach_sensor('camera', camera)
-vehicle.attach_sensor('gforces', gforces)
-vehicle.attach_sensor('electrics', electrics)
-import time
-import numpy as np
-
-def simple_ai_controller(vehicle, sensors):
-    """
-    Простейший ИИ: едет вперёд, подруливает по камере.
-    В реальности здесь будет нейросеть.
-    """
-    img = sensors['camera'].data['colour']
-    
-    steer = np.mean(img[100:150, :, 0]) - 128
-    steer = np.clip(steer / 128, -1, 1)  
-    
-    vehicle.control(throttle=0.5, steer=steer, brakes=0)
-
-try:
-    while True:
-        vehicle.poll_sensors()
-        
-        simple_ai_controller(vehicle, vehicle.sensors)
-        
-        time.sleep(1 / 30)
-except KeyboardInterrupt:
-    pass
-import cv2
-import pandas as pd
-
-data = []
-
-def collect_data(vehicle, sensors, step):
-    """Собираем данные: изображение + управляющие сигналы."""
-    img = sensors['camera'].data['colour']
-    throttle = vehicle.state['userThrottle']
-    steer = vehicle.state['steering']
-    speed = vehicle.state['speed']
-    
-    cv2.imwrite(f'data/img_{step}.png', img)
-    
-    data.append({
-        'step': step,
-        'throttle': throttle,
-        'steer': steer,
-        'speed': speed
-    })
-
-for step in range(1000):
-    vehicle.poll_sensors()
-    collect_data(vehicle, vehicle.sensors, step)
-    vehicle.control(throttle=0.5, steer=0.1)
-    time.sleep(1 / 30)
-
-pd.DataFrame(data).to_csv('driving_data.csv', index=False)
-import tensorflow as tf
-from tensorflow.keras import layers, models
-
-def create_model():
-    model = models.Sequential([
-        layers.Conv2D(32, (3, 3), activation='relu', input_shape=(256, 256, 3)),
-        layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(64, (3, 3), activation='relu'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(64, (3, 3), activation='relu'),
-        layers.Flatten(),
-        layers.Dense(64, activation='relu'),
-        layers.Dense(2)  # throttle, steer
-    ])
-    model.compile(optimizer='adam', loss='mse')
-    return model
-
-model = create_model()
-
-model.fit(X_train, y_train, epochs=10)
-bng.close()
+beamng-ai-integration/
+├── README.md
+├── requirements.txt
+├── config/
+│   ├── vehicle.json
+│   └── scenario.json
+├── data/
+│   ├── raw/
+│   └── processed/
+├── models/
+│   ├── train.py
+│   └── inference.py
+├── scripts/
+│   ├── launch_simulator.py
+│   ├── collect_data.py
+│   └── run_ai.py
+├── notebooks/
+│   └── data_analysis.ipynb
+└── docs/
+    └── API_REFERENCE.md
