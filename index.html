@@ -1,176 +1,104 @@
-# BeamNG.drive + ИИ: интеграция нейросетей
+import pygame
 
-Проект для обучения и тестирования ИИ-контроллеров в симуляторе BeamNG.drive с использованием `BeamNGpy`.
+# Размеры окна
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
 
-## Функционал
+# Цвета
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (100, 100, 100)
 
-- Подключение к симулятору.
-- Сбор данных (изображения, датчики, телеметрия).
-- Обучение нейросети для управления автомобилем.
-- Инференс в реальном времени.
+# Физические параметры
+MAX_SPEED = 10
+ACCELERATION = 0.2
+DECELERATION = 0.1
+TURN_SPEED = 3  # градусов за кадр
 
-## Требования
+# Пути к ресурсам
+CAR_IMAGES = [
+    'assets/cars/car_blue.png',
+    'assets/cars/car_red.png',
+    'assets/cars/car_green.png'
+]
+BACKGROUND_IMAGE = 'assets/background/road.png'
+import pygame
+import sys
+import random
+from config import *
 
-- BeamNG.drive (лицензия)
-- Python 3.8+
-- `beamngpy`, `tensorflow`, `opencv-python`, `pandas`, `numpy`
-
-## Установка
-
-1. Установите зависимости:
-   ```bash
-   pip install -r requirements.txt
-python scripts/run_ai.py
-
----
-
-## 2. `requirements.txt`
-
-```txt
-beamngpy>=1.20.0
-tensorflow>=2.12.0
-opencv-python>=4.7.0
-pandas>=1.5.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-jupyter>=1.0.0
-{
-  "model": "etk800",
-  "license": "AI_TEST",
-  "position": [0, 0, 0],
-  "rotation": [0, 0, 0]
-}
-{
-  "map": "west_coast_usa",
-  "scenario_name": "ai_test_track",
-  "road_nodes": [
-    [0, 0, 0, 5],
-    [50, 0, 0, 5],
-    [100, 50, 0, 5]
-  ]
-}
-from beamngpy import BeamNGDrive, Scenario, Vehicle
-import json
-
-def load_config(path):
-    with open(path, 'r') as f:
-        return json.load(f)
+def load_and_scale_image(path, scale=0.2):
+    """Загружает и масштабирует изображение."""
+    img = pygame.image.load(path)
+    width, height = img.get_size()
+    new_size = (int(width * scale), int(height * scale))
+    return pygame.transform.scale(img, new_size)
 
 def main():
-    # Загружаем конфигурации
-    vehicle_cfg = load_config('config/vehicle.json')
-    scenario_cfg = load_config('config/scenario.json')
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Car Driving Game")
+    clock = pygame.time.Clock()
 
-    # Инициализация симулятора
-    bng = BeamNGDrive(
-        home='C:/Program Files (x86)/BeamNG.drive',
-        user='C:/Users/YourName/Documents/BeamNG.drive'
-    )
-    bng.open()
+    # Загружаем ресурсы
+    background = pygame.image.load(BACKGROUND_IMAGE).convert()
+    car_images = [load_and_scale_image(path) for path in CAR_IMAGES]
+    font = pygame.font.Font(None, 36)
 
-    # Создаём сценарий
-    scenario = Scenario(scenario_cfg['map'], scenario_cfg['scenario_name'])
+    # Выбираем случайную машину
+    car_img = random.choice(car_images)
+    car_rect = car_img.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
 
-    vehicle = Vehicle(
-        'ego_vehicle',
-        model=vehicle_cfg['model'],
-        licence=vehicle_cfg['license']
-    )
-    scenario.add_vehicle(vehicle, pos=vehicle_cfg['position'], rot=vehicle_cfg['rotation'])
+    # Параметры движения
+    speed = 0
+    angle = 0  # угол поворота машины
 
-    # Добавляем дорогу
-    road = Road('track_editor_C_line', rid='main_road')
-    road.nodes = scenario_cfg['road_nodes']
-    scenario.add_road(road)
+    running = True
+    while running:
+        # Обработка событий
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-    scenario.make(bng)
-    bng.load_scenario(scenario)
-    bng.start_scenario()
+        # Управление
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP]:
+            speed += ACCELERATION
+        if keys[pygame.K_DOWN]:
+            speed -= DECELERATION
+        if keys[pygame.K_LEFT]:
+            angle += TURN_SPEED
+        if keys[pygame.K_RIGHT]:
+            angle -= TURN_SPEED
 
-    print("Симулятор запущен. Ожидание управления...")
-    return bng, vehicle
+        # Ограничиваем скорость
+        speed = max(-MAX_SPEED / 2, min(speed, MAX_SPEED))
 
-if __name__ == '__main__':
-    bng, vehicle = main()
-import cv2
-import pandas as pd
-import time
-from beamngpy.sensors import Camera
+        # Двигаем машину
+        radians = pygame.math.Vector2(0, -1).rotate(angle).as_polar()[1]
+        car_rect.x += speed * pygame.math.cos(radians)
+        car_rect.y += speed * pygame.math.sin(radians)
 
-def setup_camera(vehicle):
-    camera = Camera('front_cam', pos=(0.5, 0.2, 1.2), direction=(1, 0, 0))
-    vehicle.attach_sensor('camera', camera)
-    return camera
+        # Прокрутка фона (имитация движения)
+        rel_y = car_rect.y % background.get_rect().height
+        screen.blit(background, (0, rel_y - background.get_rect().height))
+        if rel_y < SCREEN_HEIGHT:
+            screen.blit(background, (0, rel_y))
 
-def collect_data(vehicle, camera, steps=1000):
-    data = []
-    for step in range(steps):
-        vehicle.poll_sensors()
-        img = vehicle.sensors['camera'].data['colour']
-        
-        # Сохраняем изображение
-        cv2.imwrite(f'data/raw/img_{step}.png', img)
-        
-        # Собираем телеметрию
-        state = vehicle.state
-        data.append({
-            'step': step,
-            'throttle': state['userThrottle'],
-            'steer': state['steering'],
-            'speed': state['speed'],
-            'rpm': state['rpm']
-        })
-        
-        time.sleep(0.1)  # 10 FPS
-    
-    # Сохраняем датасет
-    pd.DataFrame(data).to_csv('data/raw/telemetry.csv', index=False)
-    print(f"Собрано {steps} кадров и телеметрии.")
+        # Рисуем машину
+        rotated_img = pygame.transform.rotate(car_img, angle)
+        rotated_rect = rotated_img.get_rect(center=car_rect.center)
+        screen.blit(rotated_img, rotated_rect)
 
-if __name__ == '__main__':
-    from launch_simulator import main
-    bng, vehicle = main()
-    camera = setup_camera(vehicle)
-    collect_data(vehicle, camera, steps=500)
-    bng.close()
-import tensorflow as tf
-from tensorflow.keras import layers, models
-import pandas as pd
-import cv2
-import numpy as np
+        # Отображаем скорость
+        speed_text = font.render(f"Speed: {abs(speed):.1f}", True, WHITE)
+        screen.blit(speed_text, (10, 10))
 
-def load_data(image_dir, telemetry_path, n_samples=500):
-    X, y = [], []
-    telemetry = pd.read_csv(telemetry_path)
-    
-    for i in range(n_samples):
-        img = cv2.imread(f'{image_dir}/img_{i}.png')
-        img = cv2.resize(img, (224, 224)) / 255.0
-        X.append(img)
-        
-        y.append([
-            telemetry.iloc[i]['throttle'],
-            telemetry.iloc[i]['steer']
-        ])
-    
-    return np.array(X), np.array(y)
+        pygame.display.flip()
+        clock.tick(60)  # 60 FPS
 
-def create_model():
-    model = models.Sequential([
-        layers.Conv2D(32, (3, 3), activation='relu', input_shape=(224, 224, 3)),
-        layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(64, (3, 3), activation='relu'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Flatten(),
-        layers.Dense(64, activation='relu'),
-        layers.Dense(2)  # throttle, steer
-    ])
-    model.compile(optimizer='adam', loss='mse')
-    return model
+    pygame.quit()
+    sys.exit()
 
-if __name__ == '__main__':
-    X, y = load_data('data/raw', 'data/raw/telemetry.csv', n_samples=400)
-    model = create_model()
-    model.fit(X, y, epochs=10, batch_size=32, validation_split=0.2)
-    model.save('models/ai_controller.h5')
-    print("Модель сохранена.")
+if __name__ == "__main__":
+    main()
