@@ -1,20 +1,176 @@
-beamng-ai-integration/
-├── README.md
-├── requirements.txt
-├── config/
-│   ├── vehicle.json
-│   └── scenario.json
-├── data/
-│   ├── raw/
-│   └── processed/
-├── models/
-│   ├── train.py
-│   └── inference.py
-├── scripts/
-│   ├── launch_simulator.py
-│   ├── collect_data.py
-│   └── run_ai.py
-├── notebooks/
-│   └── data_analysis.ipynb
-└── docs/
-    └── API_REFERENCE.md
+# BeamNG.drive + ИИ: интеграция нейросетей
+
+Проект для обучения и тестирования ИИ-контроллеров в симуляторе BeamNG.drive с использованием `BeamNGpy`.
+
+## Функционал
+
+- Подключение к симулятору.
+- Сбор данных (изображения, датчики, телеметрия).
+- Обучение нейросети для управления автомобилем.
+- Инференс в реальном времени.
+
+## Требования
+
+- BeamNG.drive (лицензия)
+- Python 3.8+
+- `beamngpy`, `tensorflow`, `opencv-python`, `pandas`, `numpy`
+
+## Установка
+
+1. Установите зависимости:
+   ```bash
+   pip install -r requirements.txt
+python scripts/run_ai.py
+
+---
+
+## 2. `requirements.txt`
+
+```txt
+beamngpy>=1.20.0
+tensorflow>=2.12.0
+opencv-python>=4.7.0
+pandas>=1.5.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+jupyter>=1.0.0
+{
+  "model": "etk800",
+  "license": "AI_TEST",
+  "position": [0, 0, 0],
+  "rotation": [0, 0, 0]
+}
+{
+  "map": "west_coast_usa",
+  "scenario_name": "ai_test_track",
+  "road_nodes": [
+    [0, 0, 0, 5],
+    [50, 0, 0, 5],
+    [100, 50, 0, 5]
+  ]
+}
+from beamngpy import BeamNGDrive, Scenario, Vehicle
+import json
+
+def load_config(path):
+    with open(path, 'r') as f:
+        return json.load(f)
+
+def main():
+    # Загружаем конфигурации
+    vehicle_cfg = load_config('config/vehicle.json')
+    scenario_cfg = load_config('config/scenario.json')
+
+    # Инициализация симулятора
+    bng = BeamNGDrive(
+        home='C:/Program Files (x86)/BeamNG.drive',
+        user='C:/Users/YourName/Documents/BeamNG.drive'
+    )
+    bng.open()
+
+    # Создаём сценарий
+    scenario = Scenario(scenario_cfg['map'], scenario_cfg['scenario_name'])
+
+    vehicle = Vehicle(
+        'ego_vehicle',
+        model=vehicle_cfg['model'],
+        licence=vehicle_cfg['license']
+    )
+    scenario.add_vehicle(vehicle, pos=vehicle_cfg['position'], rot=vehicle_cfg['rotation'])
+
+    # Добавляем дорогу
+    road = Road('track_editor_C_line', rid='main_road')
+    road.nodes = scenario_cfg['road_nodes']
+    scenario.add_road(road)
+
+    scenario.make(bng)
+    bng.load_scenario(scenario)
+    bng.start_scenario()
+
+    print("Симулятор запущен. Ожидание управления...")
+    return bng, vehicle
+
+if __name__ == '__main__':
+    bng, vehicle = main()
+import cv2
+import pandas as pd
+import time
+from beamngpy.sensors import Camera
+
+def setup_camera(vehicle):
+    camera = Camera('front_cam', pos=(0.5, 0.2, 1.2), direction=(1, 0, 0))
+    vehicle.attach_sensor('camera', camera)
+    return camera
+
+def collect_data(vehicle, camera, steps=1000):
+    data = []
+    for step in range(steps):
+        vehicle.poll_sensors()
+        img = vehicle.sensors['camera'].data['colour']
+        
+        # Сохраняем изображение
+        cv2.imwrite(f'data/raw/img_{step}.png', img)
+        
+        # Собираем телеметрию
+        state = vehicle.state
+        data.append({
+            'step': step,
+            'throttle': state['userThrottle'],
+            'steer': state['steering'],
+            'speed': state['speed'],
+            'rpm': state['rpm']
+        })
+        
+        time.sleep(0.1)  # 10 FPS
+    
+    # Сохраняем датасет
+    pd.DataFrame(data).to_csv('data/raw/telemetry.csv', index=False)
+    print(f"Собрано {steps} кадров и телеметрии.")
+
+if __name__ == '__main__':
+    from launch_simulator import main
+    bng, vehicle = main()
+    camera = setup_camera(vehicle)
+    collect_data(vehicle, camera, steps=500)
+    bng.close()
+import tensorflow as tf
+from tensorflow.keras import layers, models
+import pandas as pd
+import cv2
+import numpy as np
+
+def load_data(image_dir, telemetry_path, n_samples=500):
+    X, y = [], []
+    telemetry = pd.read_csv(telemetry_path)
+    
+    for i in range(n_samples):
+        img = cv2.imread(f'{image_dir}/img_{i}.png')
+        img = cv2.resize(img, (224, 224)) / 255.0
+        X.append(img)
+        
+        y.append([
+            telemetry.iloc[i]['throttle'],
+            telemetry.iloc[i]['steer']
+        ])
+    
+    return np.array(X), np.array(y)
+
+def create_model():
+    model = models.Sequential([
+        layers.Conv2D(32, (3, 3), activation='relu', input_shape=(224, 224, 3)),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Flatten(),
+        layers.Dense(64, activation='relu'),
+        layers.Dense(2)  # throttle, steer
+    ])
+    model.compile(optimizer='adam', loss='mse')
+    return model
+
+if __name__ == '__main__':
+    X, y = load_data('data/raw', 'data/raw/telemetry.csv', n_samples=400)
+    model = create_model()
+    model.fit(X, y, epochs=10, batch_size=32, validation_split=0.2)
+    model.save('models/ai_controller.h5')
+    print("Модель сохранена.")
