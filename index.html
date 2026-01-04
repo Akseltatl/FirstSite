@@ -1,77 +1,160 @@
+# -*- coding: utf-8 -*-
 import pygame
 import sys
-import random
-from config import *
+import math
 
-def load_and_scale_image(path, scale=0.2):
-    """Загружает и масштабирует изображение."""
-    img = pygame.image.load(path)
-    width, height = img.get_size()
-    new_size = (int(width * scale), int(height * scale))
-    return pygame.transform.scale(img, new_size)
+# Конфигурация
+WIDTH, HEIGHT = 1200, 800
+BG_COLOR = (20, 20, 20)
+FPS = 60
+MAX_SPEED = 10
+ACCEL = 0.25
+FRICTION = 0.05
+TURN_SPEED = 4  # градусов за кадр
+
+class Car:
+    def __init__(self, x, y, color, name="Car"):
+        self.x = x
+        self.y = y
+        self.angle = 0.0  # в градусах
+        self.speed = 0.0
+        self.color = color
+        self.name = name
+        self.image = self.create_image()
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+
+    def create_image(self):
+        # создаем простой спрайт автомобиля
+        surf = pygame.Surface((60, 30), pygame.SRCALPHA)
+        pygame.draw.rect(surf, self.color, (0, 0, 60, 30))
+        pygame.draw.rect(surf, (0,0,0), (0,0,60,30), 2)
+        return surf
+
+    def update(self, dt, controls):
+        # Управление: стрелки - вперед/назад и лево/право
+        if controls['accel']:
+            self.speed += ACCEL
+        elif controls['brake']:
+            self.speed -= ACCEL * 2
+        else:
+            # свободная физика: плавное затухание
+            if self.speed > 0:
+                self.speed -= FRICTION
+            elif self.speed < 0:
+                self.speed += FRICTION
+
+        # ограничение скорости
+        self.speed = max(-MAX_SPEED, min(self.speed, MAX_SPEED))
+
+        # поворот в зависимости от скорости
+        if controls['left']:
+            self.angle -= TURN_SPEED * (1 + abs(self.speed) * 0.05)
+        if controls['right']:
+            self.angle += TURN_SPEED * (1 + abs(self.speed) * 0.05)
+
+        # обновление положения
+        rad = math.radians(self.angle)
+        self.x += math.cos(rad) * self.speed
+        self.y += math.sin(rad) * self.speed
+
+        # обновление прямоугольника
+        self.rect.center = (int(self.x), int(self.y))
+
+    def draw(self, surface):
+        rotated = pygame.transform.rotate(self.image, -self.angle)
+        rect = rotated.get_rect(center=(self.x, self.y))
+        surface.blit(rotated, rect.topleft)
+        # имя над автомобилем
+        font = pygame.font.SysFont(None, 20)
+        text = font.render(self.name, True, self.color)
+        text_rect = text.get_rect(center=(self.x, self.y - 25))
+        surface.blit(text, text_rect)
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Car Driving Game")
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Свободное вождение автомобилей (GitHub-идеи)")
     clock = pygame.time.Clock()
 
-    # Загружаем ресурсы
-    background = pygame.image.load(BACKGROUND_IMAGE).convert()
-    car_images = [load_and_scale_image(path) for path in CAR_IMAGES]
-    font = pygame.font.Font(None, 36)
+    # Создаем несколько автомобилей
+    cars = [
+        Car(200, 200, CAR_COLORS[0], "Car A"),
+        Car(400, 300, CAR_COLORS[1], "Car B"),
+        Car(600, 200, CAR_COLORS[2], "Car C"),
+        Car(800, 400, CAR_COLORS[3], "Car D"),
+    ]
 
-    # Выбираем случайную машину
-    car_img = random.choice(car_images)
-    car_rect = car_img.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    # Контроли для каждого автомобиля (по умолчанию управляем ими через разные наборы клавиш)
+    controls_list = []
+    for i in range(len(cars)):
+        controls_list.append({
+            'accel': False,
+            'brake': False,
+            'left': False,
+            'right': False,
+        })
 
-    # Параметры движения
-    speed = 0
-    angle = 0  # угол поворота машины
-
+    # Хардкодируем карту/фон как единое поле без ограничений
     running = True
     while running:
-        # Обработка событий
+        dt = clock.get_time() / 1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Управление
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_UP]:
-            speed += ACCELERATION
-        if keys[pygame.K_DOWN]:
-            speed -= DECELERATION
-        if keys[pygame.K_LEFT]:
-            angle += TURN_SPEED
-        if keys[pygame.K_RIGHT]:
-            angle -= TURN_SPEED
+            # Пример: управляение для первого автомобиля клавишами WASD
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_w:
+                    controls_list[0]['accel'] = True
+                if event.key == pygame.K_s:
+                    controls_list[0]['brake'] = True
+                if event.key == pygame.K_a:
+                    controls_list[0]['left'] = True
+                if event.key == pygame.K_d:
+                    controls_list[0]['right'] = True
 
-        # Ограничиваем скорость
-        speed = max(-MAX_SPEED / 2, min(speed, MAX_SPEED))
+                # Второй авто - Управление стрелками
+                if len(cars) > 1:
+                    if event.key == pygame.K_UP:
+                        controls_list[1]['accel'] = True
+                    if event.key == pygame.K_DOWN:
+                        controls_list[1]['brake'] = True
+                    if event.key == pygame.K_LEFT:
+                        controls_list[1]['left'] = True
+                    if event.key == pygame.K_RIGHT:
+                        controls_list[1]['right'] = True
 
-        # Двигаем машину
-        radians = pygame.math.Vector2(0, -1).rotate(angle).as_polar()[1]
-        car_rect.x += speed * pygame.math.cos(radians)
-        car_rect.y += speed * pygame.math.sin(radians)
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_w:
+                    controls_list[0]['accel'] = False
+                if event.key == pygame.K_s:
+                    controls_list[0]['brake'] = False
+                if event.key == pygame.K_a:
+                    controls_list[0]['left'] = False
+                if event.key == pygame.K_d:
+                    controls_list[0]['right'] = False
 
-        # Прокрутка фона (имитация движения)
-        rel_y = car_rect.y % background.get_rect().height
-        screen.blit(background, (0, rel_y - background.get_rect().height))
-        if rel_y < SCREEN_HEIGHT:
-            screen.blit(background, (0, rel_y))
+                if len(cars) > 1:
+                    if event.key == pygame.K_UP:
+                        controls_list[1]['accel'] = False
+                    if event.key == pygame.K_DOWN:
+                        controls_list[1]['brake'] = False
+                    if event.key == pygame.K_LEFT:
+                        controls_list[1]['left'] = False
+                    if event.key == pygame.K_RIGHT:
+                        controls_list[1]['right'] = False
 
-        # Рисуем машину
-        rotated_img = pygame.transform.rotate(car_img, angle)
-        rotated_rect = rotated_img.get_rect(center=car_rect.center)
-        screen.blit(rotated_img, rotated_rect)
+        # Обновление машин
+        for i, car in enumerate(cars):
+            car.update(dt, controls_list[i])
 
-        # Отображаем скорость
-        speed_text = font.render(f"Speed: {abs(speed):.1f}", True, WHITE)
-        screen.blit(speed_text, (10, 10))
+        # Рендер
+        screen.fill(BG_COLOR)
+        for car in cars:
+            car.draw(screen)
 
         pygame.display.flip()
-        clock.tick(60)  # 60 FPS
+        clock.tick(FPS)
 
     pygame.quit()
     sys.exit()
